@@ -1,0 +1,418 @@
+{
+  "date": "2026-09-25",
+  "tomorrow": {
+    "targetDate": "2026-09-26",
+    "pollDate": "2026-09-25",
+    "question": "আগামীকাল আপনার কয়টা মিল চলবে? ১=দুপুর ও রাত, ২=শুধু দুপুর, ৩=শুধু রাত, ৪=মিল অফ",
+    "status": "SCHEDULED",
+    "totalActiveMembers": 9,
+    "bothCount": 0,
+    "lunchOnlyCount": 0,
+    "dinnerOnlyCount": 0,
+    "noneCount": 0,
+    "pendingCount": 9,
+    "totalLunchMeals": 0,
+    "totalDinnerMeals": 0,
+    "votes": {
+      "mem-1": {
+        "memberId": "mem-1",
+        "memberName": "Safat",
+        "phone": "8801874278012",
+        "choice": "PENDING",
+        "lunchStatus": "PENDING",
+        "dinnerStatus": "PENDING",
+        "isAutoResolved": false,
+        "manualOverride": false
+      },
+      "mem-2": {
+        "memberId": "mem-2",
+        "memberName": "Abdur Rahman",
+        "phone": "8801325437917",
+        "choice": "PENDING",
+        "lunchStatus": "PENDING",
+        "dinnerStatus": "PENDING",
+        "isAutoResolved": false,
+        "manualOverride": false
+      },
+      "mem-3": {
+        "memberId": "mem-3",
+        "memberName": "Abid",
+        "phone": "8801330329096",
+        "choice": "PENDING",
+        "lunchStatus": "PENDING",
+        "dinnerStatus": "PENDING",
+        "isAutoResolved": false,
+        "manualOverride": false
+      },
+      "mem-4": {
+        "memberId": "mem-4",
+        "memberName": "Imtiaz",
+        "phone": "880179799820",
+        "choice": "PENDING",
+        "lunchStatus": "PENDING",
+        "dinnerStatus": "PENDING",
+        "isAutoResolved": false,
+        "manualOverride": false
+      },
+      "mem-1789833109459": {
+        "memberId": "mem-1789833109459",
+        "memberName": "Abir",
+        "phone": "8801907029777",
+        "choice": "PENDING",
+        "lunchStatus": "PENDING",
+        "dinnerStatus": "PENDING",
+        "isAutoResolved": false,
+        "manualOverride": false
+      },
+      "mem-1789833147235": {
+        "memberId": "mem-1789833147235",
+        "memberName": "Akib",
+        "phone": "8801848242745",
+        "choice": "PENDING",
+        "lunchStatus": "PENDING",
+        "dinnerStatus": "PENDING",
+        "isAutoResolved": false,
+        "manualOverride": false
+      },
+      "mem-1789913754090": {
+        "memberId": "mem-1789913754090",
+        "memberName": "Anik",
+        "phone": "8801910270142",
+        "choice": "PENDING",
+        "lunchStatus": "PENDING",
+        "dinnerStatus": "PENDING",
+        "isAutoResolved": false,
+        "manualOverride": false
+      },
+      "mem-1789917193786": {
+        "memberId": "mem-1789917193786",
+        "memberName": "Shaibal",
+        "phone": "880755994808",
+        "choice": "PENDING",
+        "lunchStatus": "PENDING",
+        "dinnerStatus": "PENDING",
+        "isAutoResolved": false,
+        "manualOverride": false
+      },
+      "mem-1790341229707": {
+        "memberId": "mem-1790341229707",
+        "memberName": "Sayed",
+        "phone": "8801909709430",
+        "choice": "PENDING",
+        "lunchStatus": "PENDING",
+        "dinnerStatus": "PENDING",
+        "isAutoResolved": false,
+        "manualOverride": false
+      }
+    }
+  },
+  "lunch": {
+    "slot": "lunch",
+    "date": "2026-09-25",
+    "question": "আজ দুপুরে কি আপনার মিল চলবে?",
+    "status": "SCHEDULED",
+    "totalActiveMembers": 9,
+    "yesCount": 0,
+    "noCount": 0,
+    "pendingCount": 9,
+    "votes": {
+      "mem-1": {
+        "memberId": "mem-1",
+        "memberName": "Safat",
+        "phone": "8801874278012",
+        "status": "PENDING"
+      },
+      "mem-2": {
+        "memberId": "mem-2",
+        "memberName": "Abdur Rahman",
+        "phone": "8801325437917",
+        "status": "PENDING"
+      },
+      "mem-3": {
+        "memberId": "mem-3",
+        "memberName": "Abid",
+        "phone": "8801330329096",
+        "status": "PENDING"
+      },
+      "mem-4": {
+        "memberId": "mem-4",
+        "memberName": "Imtiaz",
+        "phone": "880179799820",
+        "status": "PENDING"
+      },
+      "mem-1789833109459": {
+        "memberId": "mem-1789833109459",
+        "memberName": "Abir",
+        "phone": "8801907029777",
+        "status": "PENDING"
+      },
+      "mem-1789833147235": {
+        "memberId": "mem-1789833147235",
+        "memberName": "Akib",
+        "phone": "8801848242745",
+        "status": "PENDING"
+      },
+      "mem-1789913754090": {
+        "memberId": "mem-1789913754090",
+        "memberName": "Anik",
+        "phone": "8801910270142",
+        "status": "PENDING"
+      },
+      "mem-1789917193786": {
+        "memberId": "mem-1789917193786",
+        "memberName": "Shaibal",
+        "phone": "880755994808",
+        "status": "PENDING"
+      },
+      "mem-1790341229707": {
+        "memberId": "mem-1790341229707",
+        "memberName": "Sayed",
+        "phone": "8801909709430",
+        "status": "PENDING"
+      }
+    }
+  },
+  "dinner": {
+    "slot": "dinner",
+    "date": "2026-09-25",
+    "question": "আজ রাতে কি আপনার মিল চলবে?",
+    "status": "SCHEDULED",
+    "totalActiveMembers": 9,
+    "yesCount": 0,
+    "noCount": 0,
+    "pendingCount": 9,
+    "votes": {
+      "mem-1": {
+        "memberId": "mem-1",
+        "memberName": "Safat",
+        "phone": "8801874278012",
+        "status": "PENDING"
+      },
+      "mem-2": {
+        "memberId": "mem-2",
+        "memberName": "Abdur Rahman",
+        "phone": "8801325437917",
+        "status": "PENDING"
+      },
+      "mem-3": {
+        "memberId": "mem-3",
+        "memberName": "Abid",
+        "phone": "8801330329096",
+        "status": "PENDING"
+      },
+      "mem-4": {
+        "memberId": "mem-4",
+        "memberName": "Imtiaz",
+        "phone": "880179799820",
+        "status": "PENDING"
+      },
+      "mem-1789833109459": {
+        "memberId": "mem-1789833109459",
+        "memberName": "Abir",
+        "phone": "8801907029777",
+        "status": "PENDING"
+      },
+      "mem-1789833147235": {
+        "memberId": "mem-1789833147235",
+        "memberName": "Akib",
+        "phone": "8801848242745",
+        "status": "PENDING"
+      },
+      "mem-1789913754090": {
+        "memberId": "mem-1789913754090",
+        "memberName": "Anik",
+        "phone": "8801910270142",
+        "status": "PENDING"
+      },
+      "mem-1789917193786": {
+        "memberId": "mem-1789917193786",
+        "memberName": "Shaibal",
+        "phone": "880755994808",
+        "status": "PENDING"
+      },
+      "mem-1790341229707": {
+        "memberId": "mem-1790341229707",
+        "memberName": "Sayed",
+        "phone": "8801909709430",
+        "status": "PENDING"
+      }
+    }
+  },
+  "cookPhone": "https://chat.whatsapp.com/E77bS09M0MIHQcvJaLJAek",
+  "cookName": "মেস ও দোকানদার হোয়াটসঅ্যাপ গ্রুপ",
+  "isAutomationEnabled": true,
+  "gateway": {
+    "provider": "ultramsg",
+    "instanceId": "instance192286",
+    "token": "j1rumux3r9i4jb0t"
+  },
+  "templates": {
+    "lunchPollMessage": "📢 *মেস মিল পোল (দুপুরের মিল)*\nআজ দুপুরের কি আপনার মিল চলবে?\n\nউত্তর দিতে মেসেজ করুন:\n১ = হ্যাঁ (মিল অন)\n২ = না (মিল অফ)\n\n⚠️ (সকাল ১১:০০ টা এর মধ্যে না জানালে মিল স্বয়ংক্রিয়ভাবে অন হিসেবে গণ্য হবে)",
+    "dinnerPollMessage": "📢 *মেস মিল পোল (রাতের মিল)*\nআজ রাতের কি আপনার মিল চলবে?\n\nউত্তর দিতে মেসেজ করুন:\n১ = হ্যাঁ (মিল অন)\n২ = না (মিল অফ)\n\n⚠️ (বিকাল ০৫:০০ টা এর মধ্যে না জানালে মিল স্বয়ংক্রিয়ভাবে অন হিসেবে গণ্য হবে)",
+    "cookNotificationTemplate": "আজ {slot} মোট {count} জনের মিল রান্না করবেন",
+    "morningPollTime": "08:00",
+    "afternoonPollTime": "14:00",
+    "lunchCutoffTime": "11:00",
+    "dinnerCutoffTime": "17:00",
+    "tomorrowPollMessage": "তারিখ: {tomorrow_date}\n\nকাল আপনার কয়টি মিল চলবে?\n\nউত্তর দিতে নিচের যেকোনো একটি নম্বর লিখে পাঠান:\n১ = দুপুর ও রাত (দুটোই অন)\n২ = শুধু দুপুর (দুপুর চলবে, রাত অফ)\n৩ = শুধু রাত (রাত চলবে, দুপুর অফ)\n৪ = কোনো মিল চলবে না (মিল অফ)\n\n⚠️ (রাত ১০:৩০ টা এর মধ্যে না জানালে মিল স্বয়ংক্রিয়ভাবে অন হিসেবে গণ্য হবে)",
+    "cookTomorrowNotificationTemplate": "📢 *আগামীকালের মিলের তালিকা ({tomorrow_date})*\n\nকালকের\n🍛 দুপুরের মিল: {lunch_count} জন\n🍲 রাতের মিল: {dinner_count} জন\n",
+    "advancePollTime": "20:25",
+    "advanceCutoffTime": "22:30",
+    "enableLunchPoll": false,
+    "enableDinnerPoll": false,
+    "enableAdvancePoll": true
+  },
+  "lastSyncAt": "2026-09-25T12:55:59.867Z",
+  "logs": [
+    {
+      "timestamp": "13:37:03",
+      "message": "[POLL RESET] আগামীকালের পোল সম্পূর্ণ ফ্রেশ ও নতুন করে রিসেট করা হয়েছে। সকল সদস্য 'অপেক্ষা (PENDING)' অবস্থায় আছে।",
+      "type": "info"
+    },
+    {
+      "timestamp": "13:22:28",
+      "message": "মেসেজ টেমপ্লেট এবং শিডিউল সফলভাবে আপডেট করা হয়েছে।",
+      "type": "success"
+    },
+    {
+      "timestamp": "13:21:28",
+      "message": "[TOMORROW POLL] পাঠাতে ব্যর্থ: Sayed (8801909709430) - Your instance has been Stopped due to non-payment. you can activate this instance by extending your subscription. Payment information updates every 5 minutes.",
+      "type": "warning"
+    },
+    {
+      "timestamp": "13:21:28",
+      "message": "[TOMORROW POLL] পাঠাতে ব্যর্থ: Shaibal (880755994808) - Your instance has been Stopped due to non-payment. you can activate this instance by extending your subscription. Payment information updates every 5 minutes.",
+      "type": "warning"
+    },
+    {
+      "timestamp": "13:21:28",
+      "message": "[TOMORROW POLL] পাঠাতে ব্যর্থ: Anik (8801910270142) - Your instance has been Stopped due to non-payment. you can activate this instance by extending your subscription. Payment information updates every 5 minutes.",
+      "type": "warning"
+    },
+    {
+      "timestamp": "13:21:27",
+      "message": "[TOMORROW POLL] পাঠাতে ব্যর্থ: Akib (8801848242745) - Your instance has been Stopped due to non-payment. you can activate this instance by extending your subscription. Payment information updates every 5 minutes.",
+      "type": "warning"
+    },
+    {
+      "timestamp": "13:21:27",
+      "message": "[TOMORROW POLL] পাঠাতে ব্যর্থ: Abir (8801907029777) - Your instance has been Stopped due to non-payment. you can activate this instance by extending your subscription. Payment information updates every 5 minutes.",
+      "type": "warning"
+    },
+    {
+      "timestamp": "13:21:27",
+      "message": "[TOMORROW POLL] পাঠাতে ব্যর্থ: Imtiaz (880179799820) - Your instance has been Stopped due to non-payment. you can activate this instance by extending your subscription. Payment information updates every 5 minutes.",
+      "type": "warning"
+    },
+    {
+      "timestamp": "13:21:27",
+      "message": "[TOMORROW POLL] পাঠাতে ব্যর্থ: Abid (8801330329096) - Your instance has been Stopped due to non-payment. you can activate this instance by extending your subscription. Payment information updates every 5 minutes.",
+      "type": "warning"
+    },
+    {
+      "timestamp": "13:21:26",
+      "message": "[TOMORROW POLL] পাঠাতে ব্যর্থ: Abdur Rahman (8801325437917) - Your instance has been Stopped due to non-payment. you can activate this instance by extending your subscription. Payment information updates every 5 minutes.",
+      "type": "warning"
+    },
+    {
+      "timestamp": "13:21:26",
+      "message": "[TOMORROW POLL] পাঠাতে ব্যর্থ: Safat (8801874278012) - Your instance has been Stopped due to non-payment. you can activate this instance by extending your subscription. Payment information updates every 5 minutes.",
+      "type": "warning"
+    },
+    {
+      "timestamp": "13:21:26",
+      "message": "[TOMORROW POLL] দোকানদারের ১ দিন পূর্বের নিয়মে আগামীকালের ৪-পছন্দ পোল শুরু হয়েছে (2026-09-26). Source: Admin Dashboard",
+      "type": "info"
+    },
+    {
+      "timestamp": "13:20:29",
+      "message": "[POLL RESET] আগামীকালের পোল সম্পূর্ণ ফ্রেশ ও নতুন করে রিসেট করা হয়েছে। সকল সদস্য 'অপেক্ষা (PENDING)' অবস্থায় আছে।",
+      "type": "info"
+    },
+    {
+      "timestamp": "13:17:45",
+      "message": "মেসেজ টেমপ্লেট এবং শিডিউল সফলভাবে আপডেট করা হয়েছে।",
+      "type": "success"
+    },
+    {
+      "timestamp": "13:13:49",
+      "message": "[TOMORROW POLL] পাঠাতে ব্যর্থ: Sayed (8801909709430) - Your instance has been Stopped due to non-payment. you can activate this instance by extending your subscription. Payment information updates every 5 minutes.",
+      "type": "warning"
+    },
+    {
+      "timestamp": "13:13:49",
+      "message": "[TOMORROW POLL] পাঠাতে ব্যর্থ: Shaibal (880755994808) - Your instance has been Stopped due to non-payment. you can activate this instance by extending your subscription. Payment information updates every 5 minutes.",
+      "type": "warning"
+    },
+    {
+      "timestamp": "13:13:49",
+      "message": "[TOMORROW POLL] পাঠাতে ব্যর্থ: Anik (8801910270142) - Your instance has been Stopped due to non-payment. you can activate this instance by extending your subscription. Payment information updates every 5 minutes.",
+      "type": "warning"
+    },
+    {
+      "timestamp": "13:13:49",
+      "message": "[TOMORROW POLL] পাঠাতে ব্যর্থ: Akib (8801848242745) - Your instance has been Stopped due to non-payment. you can activate this instance by extending your subscription. Payment information updates every 5 minutes.",
+      "type": "warning"
+    },
+    {
+      "timestamp": "13:13:48",
+      "message": "[TOMORROW POLL] পাঠাতে ব্যর্থ: Abir (8801907029777) - Your instance has been Stopped due to non-payment. you can activate this instance by extending your subscription. Payment information updates every 5 minutes.",
+      "type": "warning"
+    },
+    {
+      "timestamp": "13:13:48",
+      "message": "[TOMORROW POLL] পাঠাতে ব্যর্থ: Imtiaz (880179799820) - Your instance has been Stopped due to non-payment. you can activate this instance by extending your subscription. Payment information updates every 5 minutes.",
+      "type": "warning"
+    },
+    {
+      "timestamp": "13:13:48",
+      "message": "[TOMORROW POLL] পাঠাতে ব্যর্থ: Abid (8801330329096) - Your instance has been Stopped due to non-payment. you can activate this instance by extending your subscription. Payment information updates every 5 minutes.",
+      "type": "warning"
+    },
+    {
+      "timestamp": "13:13:47",
+      "message": "[TOMORROW POLL] পাঠাতে ব্যর্থ: Abdur Rahman (8801325437917) - Your instance has been Stopped due to non-payment. you can activate this instance by extending your subscription. Payment information updates every 5 minutes.",
+      "type": "warning"
+    },
+    {
+      "timestamp": "13:13:47",
+      "message": "[TOMORROW POLL] পাঠাতে ব্যর্থ: Safat (8801874278012) - Your instance has been Stopped due to non-payment. you can activate this instance by extending your subscription. Payment information updates every 5 minutes.",
+      "type": "warning"
+    },
+    {
+      "timestamp": "13:13:47",
+      "message": "[TOMORROW POLL] দোকানদারের ১ দিন পূর্বের নিয়মে আগামীকালের ৪-পছন্দ পোল শুরু হয়েছে (2026-09-26). Source: Admin Dashboard",
+      "type": "info"
+    },
+    {
+      "timestamp": "13:12:08",
+      "message": "[TOMORROW DISPATCH] হোয়াটসঅ্যাপ গ্রুপে পাঠাতে ব্যর্থ: Your instance has been Stopped due to non-payment. you can activate this instance by extending your subscription. Payment information updates every 5 minutes.",
+      "type": "warning"
+    },
+    {
+      "timestamp": "13:12:07",
+      "message": "[TOMORROW DISPATCH] দোকানদার / রান্নার হোয়াটসঅ্যাপ গ্রুপে (https://chat.whatsapp.com/E77bS09M0MIHQcvJaLJAek) আগামীকালের মিলের তালিকা প্রস্তুত। Source: Admin Dashboard",
+      "type": "success"
+    },
+    {
+      "timestamp": "13:11:41",
+      "message": "Settings updated. Cook phone: https://chat.whatsapp.com/E77bS09M0MIHQcvJaLJAek",
+      "type": "info"
+    },
+    {
+      "timestamp": "13:04:51",
+      "message": "Settings updated. Cook phone: https://chat.whatsapp.com/B7X9qMessBazarGroup",
+      "type": "info"
+    },
+    {
+      "timestamp": "13:00:37",
+      "message": "Synced 9 active members from database",
+      "type": "info"
+    },
+    {
+      "timestamp": "12:55:59",
+      "message": "WhatsApp Poll Automation System initialized for 2026-09-25",
+      "type": "info"
+    }
+  ]
+}

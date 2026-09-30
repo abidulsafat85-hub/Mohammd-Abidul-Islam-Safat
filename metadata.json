@@ -1,0 +1,6 @@
+{
+  "name": "MessMate",
+  "description": "Smart Mess Meal Management with automated date synchronization, daily meal tracking, deposits, monthly accounting reports, and Excel export.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
