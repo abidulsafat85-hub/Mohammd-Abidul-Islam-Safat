@@ -1,6 +1,20 @@
-import cron, { ScheduledTask } from 'node-cron';
 import fs from 'fs';
 import path from 'path';
+
+let cronModule: any = null;
+function getCron(): any {
+  if (!cronModule) {
+    try {
+      const req = typeof require !== 'undefined' ? require : null;
+      if (req) {
+        cronModule = req('node-cron');
+      }
+    } catch {
+      // In serverless environments, cron is safely disabled
+    }
+  }
+  return cronModule;
+}
 
 export type PollVoteStatus = 'YES' | 'NO' | 'PENDING' | 'AUTO_YES';
 
@@ -381,7 +395,7 @@ export class WhatsAppAutomationService {
   private static instance: WhatsAppAutomationService;
   private state: WhatsAppPollDayState;
   private activeMembers: ActiveMemberInfo[] = [];
-  private cronTasks: ScheduledTask[] = [];
+  private cronTasks: any[] = [];
   private pollIntervalTimer: NodeJS.Timeout | null = null;
   private processedMessageIds: Set<string> = new Set();
   private isCheckingAutomations: boolean = false;
@@ -752,6 +766,12 @@ export class WhatsAppAutomationService {
   public initDefaultCronJobs() {
     this.cronTasks.forEach((t) => t.stop());
     this.cronTasks = [];
+
+    const cron = getCron();
+    if (!cron) {
+      console.log('[WhatsAppService] Cron scheduler inactive in serverless mode.');
+      return;
+    }
 
     const morningTime = this.state?.templates?.morningPollTime || '08:00';
     const afternoonTime = this.state?.templates?.afternoonPollTime || '14:00';
