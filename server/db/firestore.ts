@@ -1,8 +1,15 @@
-import { initializeApp, cert, getApps } from 'firebase-admin/app';
-import { getFirestore as getAdminFirestore } from 'firebase-admin/firestore';
+import { createRequire } from 'module';
 
 let firestoreInstance: any = null;
 let isMockFirestore = false;
+
+const safeRequire = (() => {
+  try {
+    return createRequire(typeof __filename !== 'undefined' ? `file://${__filename}` : 'file:///app/server.ts');
+  } catch {
+    return typeof require !== 'undefined' ? require : null;
+  }
+})();
 
 // In-memory mock storage for development/test when environment credentials are not supplied
 class MockFirestore {
@@ -226,6 +233,11 @@ export function getFirestore(): any {
 
   if (serviceAccountBase64 && projectId) {
     try {
+      if (!safeRequire) {
+        throw new Error('Dynamic require is not available in this environment');
+      }
+      const { initializeApp, cert, getApps } = safeRequire('firebase-admin/app');
+      const { getFirestore: getAdminFirestore } = safeRequire('firebase-admin/firestore');
       const decodedJson = Buffer.from(serviceAccountBase64, 'base64').toString('utf-8');
       const serviceAccount = JSON.parse(decodedJson);
 

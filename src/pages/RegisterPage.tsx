@@ -23,86 +23,6 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegisterSuccess })
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Quick 0000 Test Auto-Registration & Auto-Entry
-  const triggerQuickTestRegister = async () => {
-    const suffix = Math.floor(1000 + Math.random() * 9000);
-    const testName = `টেস্ট মেম্বার (০০০০)`;
-    const testEmail = `test0000_${suffix}@gmail.com`;
-    const testPhone = `0171${Math.floor(1000000 + Math.random() * 9000000)}`;
-    const testAddress = 'রুম ২০৪, টেস্ট মেস';
-    const testStudentId = 'TEST-0000';
-    const testPass = 'password0000';
-
-    setFullName(testName);
-    setEmail(testEmail);
-    setPhone(testPhone);
-    setAddress(testAddress);
-    setStudentId(testStudentId);
-    setPassword(testPass);
-    setConfirmPassword(testPass);
-    setLoading(true);
-    setError(null);
-
-    try {
-      const res = await fetch('/api/mess/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fullName: testName,
-          email: testEmail,
-          phone: testPhone,
-          address: testAddress,
-          studentId: testStudentId,
-          password: testPass,
-          pin: '0000',
-          isTest: true,
-        }),
-      });
-
-      const json = await res.json();
-      if (!res.ok || json.success === false) {
-        throw new Error(json.error || 'রেজিস্ট্রেশন ব্যর্থ হয়েছে।');
-      }
-
-      if (json.user) {
-        try {
-          localStorage.setItem('messmate_auth_user', JSON.stringify(json.user));
-        } catch {}
-      }
-      onRegisterSuccess(json.user);
-      navigate('/member/home', { replace: true });
-    } catch (err: any) {
-      setError(err.message || 'রেজিস্ট্রেশন করা যায়নি। আবার চেষ্টা করুন।');
-      setLoading(false);
-    }
-  };
-
-  const checkAndHandle0000 = async (val: string) => {
-    const trimmed = val.trim();
-    if (trimmed === '0000' || trimmed === '০০০০' || trimmed.includes('0000') || trimmed.includes('০০০০')) {
-      try {
-        setLoading(true);
-        const res = await fetch('/api/mess/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: '0000', password: '0000' }),
-        });
-        const json = await res.json();
-        if (json.success && json.user) {
-          try {
-            localStorage.setItem('messmate_auth_user', JSON.stringify(json.user));
-          } catch {}
-          onRegisterSuccess(json.user);
-          navigate('/member/home', { replace: true });
-          return true;
-        }
-      } catch {}
-      await triggerQuickTestRegister();
-      return true;
-    }
-    return false;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -199,11 +119,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegisterSuccess })
                 required
                 placeholder="আপনার পুরো নাম লিখুন"
                 value={fullName}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setFullName(val);
-                  checkAndHandle0000(val);
-                }}
+                onChange={(e) => setFullName(e.target.value)}
                 className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:border-emerald-600 outline-none"
               />
             </div>

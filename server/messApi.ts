@@ -87,60 +87,6 @@ messRouter.get('/members-list', async (_req: Request, res: Response) => {
 // ---------------------------------------------------------------------------
 messRouter.post('/auth/login', async (req: Request, res: Response) => {
   try {
-    const rawEmail = String(req.body.email || '').trim().toLowerCase();
-    const rawPass = String(req.body.password || '');
-
-    // Quick 0000 test login handler
-    if (
-      rawEmail === '0000' ||
-      rawEmail === '০০০০' ||
-      rawEmail.includes('0000') ||
-      rawEmail.includes('০০০০') ||
-      rawPass === '0000' ||
-      rawPass === 'password0000' ||
-      rawPass.includes('0000') ||
-      req.body.pin === '0000' ||
-      req.body.isTest
-    ) {
-      const allMembers = await Repository.getAllMembers(true);
-      let target =
-        allMembers.find((m) => m.fullName?.includes('0000') || m.fullName?.includes('০০০০') || m.email?.includes('test0000')) ||
-        allMembers.find((m) => m.registered) ||
-        allMembers[1] ||
-        allMembers[0];
-      if (!target) {
-        const reg = await Repository.registerMember({
-          fullName: 'টেস্ট মেম্বার (০০০০)',
-          email: 'test0000@gmail.com',
-          phone: '01710000000',
-          address: 'রুম ২০৪, টেস্ট মেস',
-          studentId: 'TEST-0000',
-          password: 'password0000',
-          pin: '0000',
-        });
-        target = reg.member;
-      }
-      if (target) {
-        const sessionId = `sess_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-        await Repository.createSession(sessionId, target.id, 'member', target.email, target.id);
-        const token = signAuthToken({
-          sessionId,
-          userId: target.id,
-          memberId: target.id,
-          email: target.email,
-          role: 'member',
-        });
-        setTokenCookie(res, token, 'member');
-        return res.json({
-          success: true,
-          role: 'member',
-          token,
-          memberId: target.id,
-          user: { id: target.id, email: target.email, name: target.fullName, role: 'member' },
-        });
-      }
-    }
-
     const parseRes = LoginSchema.safeParse(req.body);
     if (!parseRes.success) {
       return res.status(400).json({ success: false, error: parseRes.error.issues[0]?.message || 'সঠিক তথ্য দিন' });
@@ -238,63 +184,15 @@ messRouter.post('/auth/register', async (req: Request, res: Response) => {
       pin: req.body.pin || '1234',
     };
 
-    if (rawData.fullName === '0000' || rawData.fullName === '০০০০') {
-      const suffix = Math.floor(1000 + Math.random() * 9000);
-      rawData.fullName = `টেস্ট মেম্বার (০০০০)`;
-      rawData.email = rawData.email || `test0000_${suffix}@gmail.com`;
-      rawData.phone = rawData.phone || `0171000${suffix}`;
-      rawData.address = rawData.address && rawData.address !== 'মেস' ? rawData.address : 'রুম ২০৪, টেস্ট মেস';
-      rawData.password = rawData.password || 'password0000';
-      rawData.pin = '0000';
-    }
-
     const parseRes = RegisterSchema.safeParse(rawData);
     if (!parseRes.success) {
       return res.status(400).json({ success: false, error: parseRes.error.issues[0]?.message || 'সঠিক তথ্য দিন' });
     }
 
     const ip = getClientIp(req);
-    const isTestMode = Boolean(
-      req.body.isTest ||
-      req.body.pin === '0000' ||
-      req.body.password === '0000' ||
-      req.body.password === 'password0000' ||
-      (req.body.fullName && (req.body.fullName.includes('0000') || req.body.fullName.includes('০০০০'))) ||
-      (req.body.name && (req.body.name.includes('0000') || req.body.name.includes('০০০০'))) ||
-      (req.body.email && req.body.email.includes('test0000'))
-    );
-    if (!isTestMode) {
-      const rate = await checkRateLimit(`register:${ip}`, 30, 60 * 60 * 1000);
-      if (!rate.allowed) {
-        return res.status(429).json({ success: false, error: 'রেজিস্ট্রেশনের সীমা অতিক্রম হয়েছে। ১ ঘণ্টা পর চেষ্টা করুন।' });
-      }
-    } else {
-      // If test mode and user already exists, auto-login into existing account
-      const allMembers = await Repository.getAllMembers(true);
-      const existing = allMembers.find(
-        (m) =>
-          (m.email && m.email.toLowerCase() === parseRes.data.email.toLowerCase()) ||
-          (m.phone && m.phone === parseRes.data.phone)
-      );
-      if (existing) {
-        const sessionId = `sess_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-        await Repository.createSession(sessionId, existing.id, 'member', existing.email, existing.id);
-        const token = signAuthToken({
-          sessionId,
-          userId: existing.id,
-          memberId: existing.id,
-          email: existing.email,
-          role: 'member',
-        });
-        setTokenCookie(res, token, 'member');
-        return res.json({
-          success: true,
-          role: 'member',
-          token,
-          memberId: existing.id,
-          user: { id: existing.id, email: existing.email, name: existing.fullName, role: 'member' },
-        });
-      }
+    const rate = await checkRateLimit(`register:${ip}`, 30, 60 * 60 * 1000);
+    if (!rate.allowed) {
+      return res.status(429).json({ success: false, error: 'রেজিস্ট্রেশনের সীমা অতিক্রম হয়েছে। ১ ঘণ্টা পর চেষ্টা করুন।' });
     }
 
     const result = await Repository.registerMember(parseRes.data);

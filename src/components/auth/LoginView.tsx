@@ -77,84 +77,6 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
   const [error, setError] = useState<string | null>(null);
 
   // Quick 0000 Test Auto-Registration & Auto-Entry
-  const triggerQuickTestRegister = async () => {
-    const suffix = Math.floor(1000 + Math.random() * 9000);
-    const testName = `টেস্ট মেম্বার (০০০০)`;
-    const testEmail = `test0000_${suffix}@gmail.com`;
-    const testPhone = `0171${Math.floor(1000000 + Math.random() * 9000000)}`;
-    const testAddress = 'রুম ২০৪, টেস্ট মেস';
-    const testStudentId = 'TEST-0000';
-    const testPass = 'password0000';
-
-    setName(testName);
-    setEmail(testEmail);
-    setPhone(testPhone);
-    setUniversityId(testStudentId);
-    setParentPhone('01710000000');
-    setLocation(testAddress);
-    setPassword(testPass);
-    setConfirmPassword(testPass);
-    setLoading(true);
-    setError(null);
-
-    try {
-      const res = await fetch('/api/mess/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fullName: testName,
-          email: testEmail,
-          phone: testPhone,
-          address: testAddress,
-          studentId: testStudentId,
-          password: testPass,
-          pin: '0000',
-          isTest: true,
-        }),
-      });
-
-      const json = await res.json();
-      if (!res.ok || json.success === false) {
-        throw new Error(json.error || 'অটো রেজিস্ট্রেশন ব্যর্থ হয়েছে।');
-      }
-
-      if (json.user) {
-        try {
-          localStorage.setItem('messmate_auth_user', JSON.stringify(json.user));
-        } catch {}
-      }
-      onLoginSuccess(json.user);
-    } catch (err: any) {
-      setError(err?.message || 'অটো রেজিস্ট্রেশন ব্যর্থ হয়েছে।');
-      setLoading(false);
-    }
-  };
-
-  const checkAndHandle0000 = async (val: string) => {
-    const trimmed = val.trim();
-    if (trimmed === '0000' || trimmed === '০০০০' || trimmed.includes('0000') || trimmed.includes('০০০০')) {
-      try {
-        setLoading(true);
-        const res = await fetch('/api/mess/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: '0000', password: '0000' }),
-        });
-        const json = await res.json();
-        if (json.success && json.user) {
-          try {
-            localStorage.setItem('messmate_auth_user', JSON.stringify(json.user));
-          } catch {}
-          onLoginSuccess(json.user);
-          return true;
-        }
-      } catch {}
-      await triggerQuickTestRegister();
-      return true;
-    }
-    return false;
-  };
-
   // Forgot password modal / message state
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
@@ -344,10 +266,8 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
                     placeholder="আপনার পুরো নাম লিখুন"
                     value={name}
                     onChange={(e) => {
-                      const val = e.target.value;
-                      setName(val);
+                      setName(e.target.value);
                       setError(null);
-                      checkAndHandle0000(val);
                     }}
                     className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:bg-white rounded-xl text-sm font-semibold text-slate-900 outline-none transition-all"
                   />
@@ -472,10 +392,8 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
                 placeholder="name@gmail.com"
                 value={email}
                 onChange={(e) => {
-                  const val = e.target.value;
-                  setEmail(val);
+                  setEmail(e.target.value);
                   setError(null);
-                  checkAndHandle0000(val);
                 }}
                 className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:bg-white rounded-xl text-sm font-semibold text-slate-900 outline-none transition-all"
               />
@@ -510,10 +428,8 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
                 placeholder="••••••"
                 value={password}
                 onChange={(e) => {
-                  const val = e.target.value;
-                  setPassword(val);
+                  setPassword(e.target.value);
                   setError(null);
-                  checkAndHandle0000(val);
                 }}
                 className="w-full pl-10 pr-10 py-2 bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:bg-white rounded-xl text-sm font-semibold text-slate-900 outline-none transition-all font-mono"
               />

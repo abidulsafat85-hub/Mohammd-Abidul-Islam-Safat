@@ -176,85 +176,6 @@ export const HomePage: React.FC<HomePageProps> = ({ authUser, onLoginSuccess }) 
     }
   };
 
-  // Quick 0000 Test Auto-Registration & Auto-Entry
-  const triggerQuickTestRegister = async () => {
-    const suffix = Math.floor(1000 + Math.random() * 9000);
-    const testName = `টেস্ট মেম্বার (০০০০)`;
-    const testEmail = `test0000_${suffix}@gmail.com`;
-    const testPhone = `0171${Math.floor(1000000 + Math.random() * 9000000)}`;
-    const testAddress = 'রুম ২০৪, টেস্ট মেস';
-    const testStudentId = 'TEST-0000';
-    const testPass = 'password0000';
-
-    setRegName(testName);
-    setRegEmail(testEmail);
-    setRegPhone(testPhone);
-    setRegAddress(testAddress);
-    setRegStudentId(testStudentId);
-    setRegPassword(testPass);
-    setRegConfirmPassword(testPass);
-    setRegLoading(true);
-    setRegError(null);
-
-    try {
-      const res = await fetch('/api/mess/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fullName: testName,
-          email: testEmail,
-          phone: testPhone,
-          address: testAddress,
-          studentId: testStudentId,
-          password: testPass,
-          pin: '0000',
-          isTest: true,
-        }),
-      });
-
-      const json = await res.json();
-      if (!res.ok || json.success === false) {
-        throw new Error(json.error || 'অটো রেজিস্ট্রেশন ব্যর্থ হয়েছে।');
-      }
-
-      const authUser: AuthUser = json.user || {
-        id: json.memberId,
-        email: testEmail,
-        name: testName,
-        role: 'member',
-        memberId: json.memberId,
-      };
-
-      onAuthSuccessDirect(authUser, 'member');
-    } catch (err: any) {
-      setRegError(err.message || 'অটো রেজিস্ট্রেশন ব্যর্থ হয়েছে। আবার চেষ্টা করুন।');
-      setRegLoading(false);
-    }
-  };
-
-  const checkAndHandle0000 = async (val: string) => {
-    const trimmed = val.trim();
-    if (trimmed === '0000' || trimmed === '০০০০' || trimmed.includes('0000') || trimmed.includes('০০০০')) {
-      try {
-        setRegLoading(true);
-        setLoginLoading(true);
-        const res = await fetch('/api/mess/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: '0000', password: '0000' }),
-        });
-        const json = await res.json();
-        if (json.success && json.user) {
-          onAuthSuccessDirect(json.user, json.role || 'member');
-          return true;
-        }
-      } catch {}
-      await triggerQuickTestRegister();
-      return true;
-    }
-    return false;
-  };
-
   const handleHeroRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setRegError(null);
@@ -607,11 +528,7 @@ export const HomePage: React.FC<HomePageProps> = ({ authUser, onLoginSuccess }) 
                           required
                           placeholder="আপনার পুরো নাম লিখুন"
                           value={regName}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setRegName(val);
-                            checkAndHandle0000(val);
-                          }}
+                          onChange={(e) => setRegName(e.target.value)}
                           className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:border-emerald-500 focus:bg-white outline-none"
                         />
                       </div>
@@ -792,11 +709,7 @@ export const HomePage: React.FC<HomePageProps> = ({ authUser, onLoginSuccess }) 
                           required
                           placeholder="name@gmail.com"
                           value={loginEmail}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setLoginEmail(val);
-                            checkAndHandle0000(val);
-                          }}
+                          onChange={(e) => setLoginEmail(e.target.value)}
                           className="w-full pl-10 pr-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:border-emerald-500 focus:bg-white outline-none"
                         />
                       </div>
@@ -1014,11 +927,7 @@ export const HomePage: React.FC<HomePageProps> = ({ authUser, onLoginSuccess }) 
                           required
                           placeholder="আপনার পুরো নাম লিখুন"
                           value={regName}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setRegName(val);
-                            checkAndHandle0000(val);
-                          }}
+                          onChange={(e) => setRegName(e.target.value)}
                           className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:border-emerald-500 focus:bg-white outline-none"
                         />
                       </div>
@@ -1181,11 +1090,7 @@ export const HomePage: React.FC<HomePageProps> = ({ authUser, onLoginSuccess }) 
                           required
                           placeholder="name@gmail.com"
                           value={loginEmail}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setLoginEmail(val);
-                            checkAndHandle0000(val);
-                          }}
+                          onChange={(e) => setLoginEmail(e.target.value)}
                           className="w-full pl-10 pr-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:border-emerald-500 focus:bg-white outline-none"
                         />
                       </div>
