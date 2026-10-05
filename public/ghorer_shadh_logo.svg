@@ -1,0 +1,138 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Luxury Metallic Gold Gradient -->
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fae17d" />
+      <stop offset="20%" stop-color="#e5b338" />
+      <stop offset="45%" stop-color="#b87b10" />
+      <stop offset="70%" stop-color="#dfa82a" />
+      <stop offset="90%" stop-color="#f5d061" />
+      <stop offset="100%" stop-color="#a46b08" />
+    </linearGradient>
+
+    <!-- Dark Metal Cloche Gradient -->
+    <linearGradient id="clocheGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2c2c2c" />
+      <stop offset="40%" stop-color="#141414" />
+      <stop offset="70%" stop-color="#1f1f1f" />
+      <stop offset="100%" stop-color="#090909" />
+    </linearGradient>
+
+    <filter id="subtleShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.12" />
+    </filter>
+  </defs>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@700;800;900&amp;display=swap');
+    .text-ghorer {
+      font-family: 'Hind Siliguri', 'Plus Jakarta Sans', 'SolaimanLipi', 'Kalpurush', 'Noto Sans Bengali', system-ui, sans-serif;
+      font-size: 76px;
+      font-weight: 900;
+      fill: #111111;
+      letter-spacing: -0.5px;
+    }
+    .text-shadh {
+      font-family: 'Hind Siliguri', 'Plus Jakarta Sans', 'SolaimanLipi', 'Kalpurush', 'Noto Sans Bengali', system-ui, sans-serif;
+      font-size: 76px;
+      font-weight: 900;
+      fill: url(#goldGrad);
+      letter-spacing: -0.5px;
+    }
+  </style>
+
+  <!-- Solid Crisp White Background Directly Beneath Logo -->
+  <circle cx="256" cy="256" r="254" fill="#ffffff" />
+
+  <!-- Outer Double Circular Gold Rings -->
+  <circle cx="256" cy="256" r="242" fill="none" stroke="url(#goldGrad)" stroke-width="4.5" />
+  <circle cx="256" cy="256" r="233" fill="none" stroke="url(#goldGrad)" stroke-width="1.8" />
+
+  <!-- ================= CHEF HAT ================= -->
+  <g id="chef-hat" transform="translate(262, 116)" filter="url(#subtleShadow)">
+    <!-- Hat Puffs -->
+    <path d="M-55,-12 C-75,-38 -50,-74 -22,-65 C-10,-88 30,-88 45,-65 C75,-68 90,-32 70,-12 C50,-2 -40,-2 -55,-12 Z"
+          fill="#ffffff" stroke="#111111" stroke-width="6.5" stroke-linejoin="round" />
+    <!-- Hat Fold Lines -->
+    <path d="M-18,-62 C-15,-32 -22,-16 -25,-6" fill="none" stroke="#222222" stroke-width="4" stroke-linecap="round" />
+    <path d="M12,-64 C15,-36 15,-16 15,-6" fill="none" stroke="#222222" stroke-width="4" stroke-linecap="round" />
+    <path d="M42,-54 C38,-32 38,-16 35,-6" fill="none" stroke="#222222" stroke-width="4" stroke-linecap="round" />
+    <!-- Hat Band -->
+    <path d="M-42,-8 L42,-8 C46,-8 45,14 40,15 L-40,15 C-45,14 -46,-8 -42,-8 Z"
+          fill="#ffffff" stroke="#111111" stroke-width="5" />
+  </g>
+
+  <!-- ================= STEAM WISPS ================= -->
+  <path d="M356,215 C366,195 352,175 366,150 C372,140 386,130 386,120 C383,125 373,135 369,145 C356,165 371,185 356,210 Z"
+        fill="url(#goldGrad)" opacity="0.9" />
+  <path d="M372,205 C382,185 377,170 390,155 C394,150 402,145 404,138 C400,142 392,148 387,155 C374,170 382,185 372,205 Z"
+        fill="url(#goldGrad)" opacity="0.8" />
+
+  <!-- ================= FOOD CLOCHE (PLATTER DOME) ================= -->
+  <!-- Cloche Top Knob -->
+  <circle cx="270" cy="146" r="9.5" fill="url(#goldGrad)" stroke="#111111" stroke-width="2.5" />
+  <ellipse cx="270" cy="153" rx="14" ry="4.5" fill="url(#goldGrad)" stroke="#111111" stroke-width="2" />
+
+  <!-- Cloche Dome Body -->
+  <path d="M188,216 C188,162 228,150 270,150 C314,150 352,162 352,216 Z"
+        fill="url(#clocheGrad)" stroke="url(#goldGrad)" stroke-width="6" />
+
+  <!-- Cloche Rim Base Gold Ring -->
+  <ellipse cx="270" cy="217" rx="86" ry="11" fill="url(#goldGrad)" stroke="#111111" stroke-width="2.5" />
+  <ellipse cx="270" cy="227" rx="95" ry="9.5" fill="url(#clocheGrad)" stroke="url(#goldGrad)" stroke-width="3" />
+
+  <!-- ================= HOUSE ROOF & WINDOW ================= -->
+  <g id="house-element">
+    <!-- Roof Triangular Outline -->
+    <path d="M68,268 L152,196 L226,260" fill="none" stroke="#111111" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M96,254 L152,204 L198,244" fill="none" stroke="#111111" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" />
+    <!-- 4-Pane Window with Gold Panes -->
+    <rect x="140" y="232" width="10" height="10" fill="url(#goldGrad)" stroke="#111111" stroke-width="1.8" />
+    <rect x="154" y="232" width="10" height="10" fill="url(#goldGrad)" stroke="#111111" stroke-width="1.8" />
+    <rect x="140" y="246" width="10" height="10" fill="url(#goldGrad)" stroke="#111111" stroke-width="1.8" />
+    <rect x="154" y="246" width="10" height="10" fill="url(#goldGrad)" stroke="#111111" stroke-width="1.8" />
+  </g>
+
+  <!-- ================= BENGALI TYPOGRAPHY: ঘরের স্বাদ ================= -->
+  <!-- 1. 'ঘরের' in Authentic Bold Black Calligraphy -->
+  <g id="typography-ghorer">
+    <text x="180" y="348" text-anchor="middle" class="text-ghorer">ঘরের</text>
+    <!-- Lower sweeping calligraphic flourish underline under ঘরের -->
+    <path d="M110,366 C155,396 225,384 260,358 C222,374 158,382 110,366 Z" fill="#111111" />
+  </g>
+
+  <!-- 2. 'স্বাদ' in Metallic Gold Gradient with Spoon Flourish -->
+  <g id="typography-shadh">
+    <text x="350" y="348" text-anchor="middle" class="text-shadh">স্বাদ</text>
+    <!-- Spoon extension top right flourish -->
+    <path d="M410,286 C425,270 442,250 456,236 C464,228 474,226 478,234 C482,242 473,256 460,268 C446,280 430,286 418,287 Z" fill="url(#goldGrad)" />
+    <!-- Lower swoosh under স্বাদ -->
+    <path d="M280,362 C330,388 410,378 440,348 C405,368 340,372 280,362 Z" fill="url(#goldGrad)" opacity="0.9" />
+  </g>
+
+  <!-- ================= BOTTOM CROSSED SPOON & FORK ================= -->
+  <g id="cutlery" transform="translate(256, 428)">
+    <!-- Decorative Divider Line & Dots -->
+    <circle cx="-100" cy="0" r="5" fill="url(#goldGrad)" />
+    <line x1="-85" y1="0" x2="-35" y2="0" stroke="url(#goldGrad)" stroke-width="2.5" stroke-linecap="round" />
+    <circle cx="100" cy="0" r="5" fill="url(#goldGrad)" stroke="#111111" stroke-width="1" />
+    <line x1="35" y1="0" x2="85" y2="0" stroke="url(#goldGrad)" stroke-width="2.5" stroke-linecap="round" />
+
+    <!-- Crossed Fork (Left to Right) -->
+    <g transform="rotate(-38)">
+      <!-- Fork Handle -->
+      <line x1="0" y1="-32" x2="0" y2="35" stroke="url(#goldGrad)" stroke-width="4.5" stroke-linecap="round" />
+      <!-- Fork Prongs -->
+      <path d="M-8,-30 L-8,-45 M-3,-30 L-3,-47 M3,-30 L3,-47 M8,-30 L8,-45" stroke="url(#goldGrad)" stroke-width="2.5" stroke-linecap="round" />
+      <path d="M-9,-30 C-9,-22 9,-22 9,-30 Z" fill="url(#goldGrad)" />
+    </g>
+
+    <!-- Crossed Spoon (Right to Left) -->
+    <g transform="rotate(38)">
+      <!-- Spoon Handle -->
+      <line x1="0" y1="-25" x2="0" y2="35" stroke="url(#goldGrad)" stroke-width="4.5" stroke-linecap="round" />
+      <!-- Spoon Bowl -->
+      <ellipse cx="0" cy="-35" rx="8" ry="14" fill="url(#goldGrad)" stroke="#111111" stroke-width="1" />
+    </g>
+  </g>
+</svg>

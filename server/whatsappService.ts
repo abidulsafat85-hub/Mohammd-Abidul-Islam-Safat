@@ -203,11 +203,12 @@ export async function sendHttpWhatsApp(
   }
 
   try {
-    const token = process.env.WHATSAPP_GATEWAY_TOKEN || process.env.ULTRAMSG_TOKEN || gateway.token || '';
+    const instanceId = process.env.ULTRAMSG_INSTANCE_ID || '';
+    const token = process.env.ULTRAMSG_TOKEN || '';
 
-    if (gateway.provider === 'ultramsg') {
-      if (!gateway.instanceId || !token) {
-        return { success: false, error: 'UltraMsg Instance ID and Token are required' };
+    if (gateway.provider === 'ultramsg' || gateway.provider === 'custom_webhook') {
+      if (!instanceId || !token) {
+        return { success: false, error: 'ULTRAMSG_INSTANCE_ID এবং ULTRAMSG_TOKEN পরিবেশ ভ্যারিয়েবল কনফিগার করা নেই' };
       }
 
       // If target is a WhatsApp Group invite link, try joining group to resolve group JID
@@ -1068,16 +1069,13 @@ export class WhatsAppAutomationService {
   }
 
   public async pollUltraMsgIncomingMessages(): Promise<number> {
-    if (this.state.gateway?.provider !== 'ultramsg') {
-      return 0;
-    }
-    const gateway = this.state.gateway;
-    const token = process.env.WHATSAPP_GATEWAY_TOKEN || process.env.ULTRAMSG_TOKEN || gateway.token || '';
-    if (!gateway.instanceId || !token) return 0;
+    const instanceId = process.env.ULTRAMSG_INSTANCE_ID;
+    const token = process.env.ULTRAMSG_TOKEN;
+    if (!instanceId || !token) return 0;
 
     try {
       // 1. Fetch recent incoming chats/messages from UltraMsg
-      const url = `https://api.ultramsg.com/${gateway.instanceId}/chats?token=${token}&limit=25`;
+      const url = `https://api.ultramsg.com/${instanceId}/chats?token=${token}&limit=25`;
       const res = await fetch(url);
       if (!res.ok) return 0;
 
@@ -1098,7 +1096,7 @@ export class WhatsAppAutomationService {
 
         // Fetch recent messages for this chat (latest 10)
         try {
-          const msgUrl = `https://api.ultramsg.com/${gateway.instanceId}/chats/messages?token=${token}&chatId=${encodeURIComponent(rawChatId)}&limit=10`;
+          const msgUrl = `https://api.ultramsg.com/${instanceId}/chats/messages?token=${token}&chatId=${encodeURIComponent(rawChatId)}&limit=10`;
           const msgRes = await fetch(msgUrl);
           if (!msgRes.ok) continue;
 

@@ -2,12 +2,10 @@ import { MemberPortalData, AuthUser } from '../types';
 
 export class ApiService {
   private static async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
-    const token = localStorage.getItem('messmate_auth_token');
     const res = await fetch(endpoint, {
       credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...options?.headers,
       },
       ...options,
@@ -17,6 +15,21 @@ export class ApiService {
       throw new Error(json.error || `Request failed: ${res.status}`);
     }
     return json;
+  }
+
+  // Get currently logged-in user via httpOnly cookie session (Section 4b)
+  static async getMe(): Promise<AuthUser | null> {
+    try {
+      const res = await fetch('/api/mess/auth/me', { credentials: 'include' });
+      if (!res.ok) return null;
+      const json = await res.json();
+      if (json.success && json.user) {
+        return json.user;
+      }
+      return null;
+    } catch {
+      return null;
+    }
   }
 
   // Get full state (Admin)
@@ -168,9 +181,6 @@ export class ApiService {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
-    if (res.token) {
-      localStorage.setItem('messmate_auth_token', res.token);
-    }
     return res;
   }
 
@@ -180,9 +190,6 @@ export class ApiService {
       method: 'POST',
       body: JSON.stringify({ newPassword }),
     });
-    if (res.token) {
-      localStorage.setItem('messmate_auth_token', res.token);
-    }
     return res;
   }
 
@@ -199,8 +206,6 @@ export class ApiService {
     try {
       await this.request('/api/mess/auth/logout', { method: 'POST' });
     } catch {}
-    localStorage.removeItem('messmate_auth_token');
-    localStorage.removeItem('messmate_auth_user');
   }
 
   // Register New User:

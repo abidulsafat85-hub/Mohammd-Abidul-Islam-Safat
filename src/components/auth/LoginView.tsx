@@ -17,15 +17,18 @@ import {
   FileText,
   MapPin,
   Compass,
+  Zap,
 } from 'lucide-react';
 import { ApiService } from '../../services/apiService';
 import { AuthUser } from '../../types';
+import { useBranding } from '../../hooks/useBranding';
 
 interface LoginViewProps {
   onLoginSuccess: (user: AuthUser) => void;
 }
 
 export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
+  const { appName, logo } = useBranding();
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
 
   // Form Fields
@@ -38,6 +41,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
   const [coords, setCoords] = useState<{ lat?: number; lng?: number }>({});
   const [detectingLocation, setDetectingLocation] = useState(false);
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
   // Auto/Manual GPS location detector
@@ -72,6 +76,85 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Quick 0000 Test Auto-Registration & Auto-Entry
+  const triggerQuickTestRegister = async () => {
+    const suffix = Math.floor(1000 + Math.random() * 9000);
+    const testName = `টেস্ট মেম্বার (০০০০)`;
+    const testEmail = `test0000_${suffix}@gmail.com`;
+    const testPhone = `0171${Math.floor(1000000 + Math.random() * 9000000)}`;
+    const testAddress = 'রুম ২০৪, টেস্ট মেস';
+    const testStudentId = 'TEST-0000';
+    const testPass = 'password0000';
+
+    setName(testName);
+    setEmail(testEmail);
+    setPhone(testPhone);
+    setUniversityId(testStudentId);
+    setParentPhone('01710000000');
+    setLocation(testAddress);
+    setPassword(testPass);
+    setConfirmPassword(testPass);
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res = await fetch('/api/mess/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fullName: testName,
+          email: testEmail,
+          phone: testPhone,
+          address: testAddress,
+          studentId: testStudentId,
+          password: testPass,
+          pin: '0000',
+          isTest: true,
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok || json.success === false) {
+        throw new Error(json.error || 'অটো রেজিস্ট্রেশন ব্যর্থ হয়েছে।');
+      }
+
+      if (json.user) {
+        try {
+          localStorage.setItem('messmate_auth_user', JSON.stringify(json.user));
+        } catch {}
+      }
+      onLoginSuccess(json.user);
+    } catch (err: any) {
+      setError(err?.message || 'অটো রেজিস্ট্রেশন ব্যর্থ হয়েছে।');
+      setLoading(false);
+    }
+  };
+
+  const checkAndHandle0000 = async (val: string) => {
+    const trimmed = val.trim();
+    if (trimmed === '0000' || trimmed === '০০০০' || trimmed.includes('0000') || trimmed.includes('০০০০')) {
+      try {
+        setLoading(true);
+        const res = await fetch('/api/mess/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: '0000', password: '0000' }),
+        });
+        const json = await res.json();
+        if (json.success && json.user) {
+          try {
+            localStorage.setItem('messmate_auth_user', JSON.stringify(json.user));
+          } catch {}
+          onLoginSuccess(json.user);
+          return true;
+        }
+      } catch {}
+      await triggerQuickTestRegister();
+      return true;
+    }
+    return false;
+  };
+
   // Forgot password modal / message state
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
@@ -103,6 +186,14 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
         setError('আপনার মা অথবা বাবার যে কোনো একজনের নাম্বার লিখুন');
         return;
       }
+      if (password.length < 4) {
+        setError('পাসওয়ার্ড কমপক্ষে ৪ অক্ষরের হতে হবে');
+        return;
+      }
+      if (password !== confirmPassword) {
+        setError('পাসওয়ার্ড ও কনফার্ম পাসওয়ার্ড দুটি একই হতে হবে');
+        return;
+      }
     }
 
     setLoading(true);
@@ -117,7 +208,23 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
           setError(result?.error || 'লগইন ব্যর্থ হয়েছে। সঠিক তথ্য দিয়ে আবার চেষ্টা করুন।');
         }
       } else {
-        setError('মেম্বারদের এডমিন প্যানেল থেকে মেস ম্যানেজার সরাসরি যুক্ত করবেন। আপনার ইমেইল যুক্ত করতে মেস ম্যানেজারের সাথে যোগাযোগ করুন।');
+        const result = await ApiService.registerUser(
+          name.trim(),
+          cleanEmail,
+          password,
+          phone.trim(),
+          universityId.trim(),
+          parentPhone.trim(),
+          location.trim()
+        );
+        if (result.success && result.user) {
+          if (result.memberId) {
+            localStorage.setItem('messmate_active_member_id', result.memberId);
+          }
+          onLoginSuccess(result.user);
+        } else {
+          setError(result?.error || 'রেজিস্ট্রেশন ব্যর্থ হয়েছে। সঠিক তথ্য দিয়ে আবার চেষ্টা করুন।');
+        }
       }
     } catch (err: any) {
       setError(err?.message || 'লগইন করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।');
@@ -160,7 +267,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
     e.preventDefault();
     if (!forgotEmail.trim()) return;
     setForgotMsg(
-      `পাসওয়ার্ড রিসেট সংক্রান্ত অনুরোধ মেস ম্যানেজারকে পাঠানো হয়েছে। মেস ম্যানেজার (০১৭১২৩৪৫৬৭৮) এর সাথে যোগাযোগ করুন।`
+      `পাসওয়ার্ড রিসেট সংক্রান্ত অনুরোধের জন্য মেস অ্যাডমিন/ম্যানেজারের সাথে যোগাযোগ করুন।`
     );
   };
 
@@ -170,12 +277,18 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
       <div className="w-full max-w-md bg-white text-slate-900 rounded-3xl shadow-2xl p-6 sm:p-8 border border-slate-100 relative overflow-hidden my-4">
         {/* Top Brand Header */}
         <div className="flex flex-col items-center text-center space-y-2 pb-2">
-          <div className="h-14 w-14 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-700 text-white flex items-center justify-center shadow-lg shadow-emerald-500/25 mb-1">
-            <UtensilsCrossed className="h-7 w-7" />
+          <div className="h-16 w-16 rounded-2xl bg-white p-1 shadow-md border border-slate-200/80 flex items-center justify-center mb-1 overflow-hidden">
+            {logo ? (
+              <img src={logo} alt={appName} className="h-full w-full object-contain rounded-xl bg-white" />
+            ) : (
+              <div className="h-full w-full rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-700 text-white flex items-center justify-center">
+                <UtensilsCrossed className="h-7 w-7" />
+              </div>
+            )}
           </div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">MessMate</h1>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">{appName}</h1>
           <p className="text-xs text-slate-500 font-medium">
-            স্মার্ট মেস মিল ও আর্থিক হিসাব ব্যবস্থাপনা
+            ঘরের তৈরি স্বাস্থ্যকর খাবারের নির্ভরযোগ্য ঠিকানা
           </p>
         </div>
 
@@ -228,11 +341,13 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
                   <input
                     type="text"
                     required
-                    placeholder="যেমন: Abidul Safat"
+                    placeholder="আপনার পুরো নাম লিখুন"
                     value={name}
                     onChange={(e) => {
-                      setName(e.target.value);
+                      const val = e.target.value;
+                      setName(val);
                       setError(null);
+                      checkAndHandle0000(val);
                     }}
                     className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:bg-white rounded-xl text-sm font-semibold text-slate-900 outline-none transition-all"
                   />
@@ -243,7 +358,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
               <div className="p-3 bg-amber-50/90 border border-amber-200 rounded-2xl">
                 <div className="flex items-center gap-1.5 text-amber-900 font-black text-xs mb-2">
                   <FileText className="h-4 w-4 text-amber-600 shrink-0" />
-                  <span>শর্তাবলী ও প্রয়োজনীয় তথ্যাবলী (Documents) 🤔🤔</span>
+                  <span>শর্তাবলী ও প্রয়োজনীয় তথ্যাবলী (Documents)</span>
                 </div>
 
                 {/* 1. ভার্সিটি আইডি নং */}
@@ -352,13 +467,15 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
             <div className="relative">
               <Mail className="absolute left-3.5 top-2.5 h-4 w-4 text-slate-400" />
               <input
-                type="email"
+                type="text"
                 required
                 placeholder="name@gmail.com"
                 value={email}
                 onChange={(e) => {
-                  setEmail(e.target.value);
+                  const val = e.target.value;
+                  setEmail(val);
                   setError(null);
+                  checkAndHandle0000(val);
                 }}
                 className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:bg-white rounded-xl text-sm font-semibold text-slate-900 outline-none transition-all"
               />
@@ -393,8 +510,10 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
                 placeholder="••••••"
                 value={password}
                 onChange={(e) => {
-                  setPassword(e.target.value);
+                  const val = e.target.value;
+                  setPassword(val);
                   setError(null);
+                  checkAndHandle0000(val);
                 }}
                 className="w-full pl-10 pr-10 py-2 bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:bg-white rounded-xl text-sm font-semibold text-slate-900 outline-none transition-all font-mono"
               />

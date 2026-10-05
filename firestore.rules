@@ -1,0 +1,13 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // SECURITY POLICY:
+    // ALL client reads and writes are strictly DENIED.
+    // Client browsers never communicate with Firestore directly.
+    // Only the backend server using the Firebase Admin SDK has access.
+    // NEVER switch this to Test Mode or allow public client access!
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

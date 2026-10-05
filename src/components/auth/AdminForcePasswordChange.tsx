@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Lock, ShieldAlert, CheckCircle2, ArrowRight, Eye, EyeOff, LogOut } from 'lucide-react';
+import { Lock, CheckCircle2, ArrowRight, Eye, EyeOff, LogOut, ArrowLeft } from 'lucide-react';
 import { ApiService } from '../../services/apiService';
 import { AuthUser } from '../../types';
 
@@ -7,12 +7,14 @@ interface AdminForcePasswordChangeProps {
   authUser: AuthUser;
   onPasswordChanged: (updatedUser: AuthUser) => void;
   onLogout: () => void;
+  onDismiss?: () => void;
 }
 
 export const AdminForcePasswordChange: React.FC<AdminForcePasswordChangeProps> = ({
   authUser,
   onPasswordChanged,
   onLogout,
+  onDismiss,
 }) => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -66,12 +68,12 @@ export const AdminForcePasswordChange: React.FC<AdminForcePasswordChangeProps> =
       <div className="w-full max-w-md bg-white text-slate-900 rounded-3xl p-6 sm:p-8 shadow-2xl border border-rose-100 relative">
         {/* Top Header */}
         <div className="flex flex-col items-center text-center space-y-2 mb-6">
-          <div className="h-14 w-14 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center border border-amber-200 mb-1">
-            <ShieldAlert className="h-7 w-7 text-amber-600" />
+          <div className="h-14 w-14 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center border border-emerald-200 mb-1">
+            <Lock className="h-7 w-7 text-emerald-600" />
           </div>
-          <h2 className="text-xl font-black text-slate-900">এডমিন পাসওয়ার্ড পরিবর্তন আবশ্যক</h2>
+          <h2 className="text-xl font-black text-slate-900">এডমিন পাসওয়ার্ড পরিবর্তন</h2>
           <p className="text-xs text-slate-600 leading-relaxed max-w-sm">
-            নিরাপত্তার স্বার্থে প্রথমবার এডমিন লগইনে নতুন গোপন পাসওয়ার্ড সেট করা বাধ্যতামূলক। পাসওয়ার্ড পরিবর্তন ছাড়া এডমিন প্যানেলে প্রবেশ করা যাবে না।
+            নিরাপত্তার স্বার্থে এডমিন অ্যাকাউন্টের জন্য একটি শক্তিশালী পাসওয়ার্ড সেট করুন।
           </p>
         </div>
 
@@ -157,11 +159,21 @@ export const AdminForcePasswordChange: React.FC<AdminForcePasswordChangeProps> =
               <span>সংরক্ষণ করা হচ্ছে...</span>
             ) : (
               <>
-                <span>পাসওয়ার্ড সেট করুন এবং এডমিন প্যানেল খুলুন</span>
+                <span>পাসওয়ার্ড পরিবর্তন করুন</span>
                 <ArrowRight className="h-4 w-4" />
               </>
             )}
           </button>
+
+          {onDismiss && (
+            <button
+              type="button"
+              onClick={onDismiss}
+              className="w-full py-2.5 px-4 rounded-xl text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <span>পরে পরিবর্তন করব (ড্যাশবোর্ডে যান)</span>
+            </button>
+          )}
 
           <button
             type="button"

@@ -1,11 +1,19 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import rateLimit from 'express-rate-limit';
+import { Repository } from './repository';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'messmate-super-secure-jwt-key-2026-production';
+const JWT_SECRET =
+  process.env.JWT_SECRET ||
+  'ghorer-shadh-production-secure-fallback-key-2026-9d8f7b6c5a4e3d2c1';
+
 export const COOKIE_NAME = 'messmate_token';
 
+export const ADMIN_SESSION_LIFETIME_MS = 12 * 60 * 60 * 1000; // 12 hours
+export const MEMBER_SESSION_LIFETIME_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+
 export interface AuthJwtPayload {
+  sessionId: string;
   userId: string;
   memberId: string;
   email: string;
@@ -14,15 +22,18 @@ export interface AuthJwtPayload {
 }
 
 export function signAuthToken(payload: AuthJwtPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
+  const expiresIn = payload.role === 'admin' ? '12h' : '30d';
+  return jwt.sign(payload, JWT_SECRET, { expiresIn });
 }
 
-export function setTokenCookie(res: Response, token: string): void {
+export function setTokenCookie(res: Response, token: string, role: 'admin' | 'member' = 'member'): void {
+  const maxAge = role === 'admin' ? ADMIN_SESSION_LIFETIME_MS : MEMBER_SESSION_LIFETIME_MS;
   res.cookie(COOKIE_NAME, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    secure: true,
+    sameSite: 'none',
+    partitioned: true,
+    maxAge,
     path: '/',
   });
 }
@@ -30,8 +41,13 @@ export function setTokenCookie(res: Response, token: string): void {
 export function clearTokenCookie(res: Response): void {
   res.clearCookie(COOKIE_NAME, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    secure: true,
+    sameSite: 'none',
+    partitioned: true,
+    path: '/',
+  });
+  res.clearCookie(COOKIE_NAME, {
+    httpOnly: true,
     path: '/',
   });
 }
@@ -55,61 +71,87 @@ export function verifyAuthToken(token: string): AuthJwtPayload | null {
   }
 }
 
-// Middleware: Require valid JWT (via httpOnly cookie or Bearer token)
-export function requireAuth(req: Request, res: Response, next: NextFunction) {
+// Middleware: Require valid session in Firestore & valid JWT (Part G)
+export async function requireAuth(req: Request, res: Response, next: NextFunction) {
+  // Prevent browser back-button caching of private responses (Part G rule 5)
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+
   const token = extractAuthToken(req);
   if (!token) {
-    return res.status(401).json({ success: false, error: 'Unauthorized: Authentication required (লগইন করা আবশ্যক)' });
+    return res.status(401).json({ success: false, error: 'লগইন করা আবশ্যক।' });
   }
 
   const payload = verifyAuthToken(token);
   if (!payload) {
-    return res.status(401).json({ success: false, error: 'Unauthorized: Invalid or expired token (সেশন মেয়াদোত্তীর্ণ হয়েছে)' });
+    clearTokenCookie(res);
+    return res.status(401).json({ success: false, error: 'সেশন মেয়াদোত্তীর্ণ হয়েছে। পুনরায় লগইন করুন।' });
+  }
+
+  // Check if session record is still active in Firestore
+  if (payload.sessionId) {
+    const session = await Repository.getSession(payload.sessionId);
+    if (!session) {
+      clearTokenCookie(res);
+      return res.status(401).json({ success: false, error: 'সেশন বাতিল করা হয়েছে। পুনরায় লগইন করুন।' });
+    }
   }
 
   (req as any).user = payload;
   next();
 }
 
-// Middleware: Require Admin role (abidulsafat85@gmail.com)
-export function requireAdmin(req: Request, res: Response, next: NextFunction) {
+// Middleware: Require Admin role
+export async function requireAdmin(req: Request, res: Response, next: NextFunction) {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+
   const token = extractAuthToken(req);
   if (!token) {
-    return res.status(401).json({ success: false, error: 'Unauthorized: Admin authentication required' });
+    return res.status(401).json({ success: false, error: 'এডমিন লগইন আবশ্যক।' });
   }
 
   const payload = verifyAuthToken(token);
   if (!payload) {
-    return res.status(401).json({ success: false, error: 'Unauthorized: Invalid or expired token' });
+    clearTokenCookie(res);
+    return res.status(401).json({ success: false, error: 'সেশন মেয়াদোত্তীর্ণ হয়েছে।' });
+  }
+
+  if (payload.sessionId) {
+    const session = await Repository.getSession(payload.sessionId);
+    if (!session) {
+      clearTokenCookie(res);
+      return res.status(401).json({ success: false, error: 'সেশন বাতিল করা হয়েছে।' });
+    }
   }
 
   if (payload.role !== 'admin' || payload.email.trim().toLowerCase() !== 'abidulsafat85@gmail.com') {
-    return res.status(403).json({ success: false, error: 'Forbidden: Admin access required (শুধুমাত্র এডমিনদের জন্য)' });
-  }
-
-  // If admin has not changed the initial password, block access to administrative operations
-  if (payload.mustChangePassword) {
-    return res.status(403).json({
-      success: false,
-      mustChangePassword: true,
-      error: 'Admin must change initial password before accessing admin features (পাসওয়ার্ড পরিবর্তন করুন)',
-    });
+    return res.status(403).json({ success: false, error: 'শুধুমাত্র মেস এডমিনদের জন্য অনুমোদিত।' });
   }
 
   (req as any).user = payload;
   next();
 }
 
-// Middleware: Member route isolation. Works only when JWT memberId equals :memberId (or if user is Admin)
-export function requireMemberOrAdmin(req: Request, res: Response, next: NextFunction) {
+// Middleware: Member route isolation (member can access only their own data; admin has access)
+export async function requireMemberOrAdmin(req: Request, res: Response, next: NextFunction) {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+
   const token = extractAuthToken(req);
   if (!token) {
-    return res.status(401).json({ success: false, error: 'Unauthorized: Member login required' });
+    return res.status(401).json({ success: false, error: 'লগইন আবশ্যক।' });
   }
 
   const payload = verifyAuthToken(token);
   if (!payload) {
-    return res.status(401).json({ success: false, error: 'Unauthorized: Invalid or expired token' });
+    clearTokenCookie(res);
+    return res.status(401).json({ success: false, error: 'সেশন মেয়াদোত্তীর্ণ হয়েছে।' });
+  }
+
+  if (payload.sessionId) {
+    const session = await Repository.getSession(payload.sessionId);
+    if (!session) {
+      clearTokenCookie(res);
+      return res.status(401).json({ success: false, error: 'সেশন বাতিল করা হয়েছে।' });
+    }
   }
 
   (req as any).user = payload;
@@ -124,18 +166,18 @@ export function requireMemberOrAdmin(req: Request, res: Response, next: NextFunc
 
   return res.status(403).json({
     success: false,
-    error: 'Forbidden: You can only access your own member data (অন্য মেম্বারের তথ্যে প্রবেশাধিকার নেই)',
+    error: 'অন্য মেম্বারের তথ্যে প্রবেশাধিকার নেই।',
   });
 }
 
-// Rate Limiter: max 5 requests per 15 minutes for auth endpoints
+// Rate Limiter
 export const authRateLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000,
   max: 5,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
     success: false,
-    error: 'Too many authentication attempts. Please try again after 15 minutes. (অতিরিক্ত চেষ্টার কারণে ১৫ মিনিটের জন্য সাময়িক ব্লক করা হয়েছে)',
+    error: 'অতিরিক্ত চেষ্টার কারণে ১৫ মিনিটের জন্য সাময়িক ব্লক করা হয়েছে।',
   },
 });

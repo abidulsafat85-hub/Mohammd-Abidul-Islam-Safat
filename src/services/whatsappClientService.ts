@@ -268,4 +268,35 @@ export class WhatsAppClientService {
     });
     return res.json();
   }
+
+  static async getGatewayStatus(): Promise<{
+    connected: boolean;
+    status: string;
+    reason?: string;
+    instanceId?: string;
+  }> {
+    const res = await fetch('/api/whatsapp/gateway/status');
+    const json = await res.json();
+    return json;
+  }
+
+  static async sendMessage(
+    phone: string,
+    message: string,
+    messageType?: string,
+    memberId?: string,
+    forceDuplicate?: boolean
+  ): Promise<{ success: boolean; messageId?: string; error?: string; isDuplicate?: boolean }> {
+    const res = await fetch('/api/whatsapp/send-message', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, message, messageType, memberId, forceDuplicate }),
+    });
+    return res.json();
+  }
+
+  static async getMessageLogs(limit: number = 100): Promise<{ success: boolean; data: any[] }> {
+    const res = await fetch(`/api/whatsapp/logs?limit=${limit}`);
+    return res.json();
+  }
 }

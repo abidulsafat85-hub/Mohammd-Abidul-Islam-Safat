@@ -1,0 +1,20 @@
+{
+  "id": "/",
+  "name": "Ghorer Shadh - ঘরের স্বাদ",
+  "short_name": "GhorerShadh",
+  "description": "ঘরের তৈরি স্বাস্থ্যকর খাবার এবং স্মার্ট মেস মিল ও ক্যাটারিং ব্যবস্থাপনা।",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#0c2e28",
+  "background_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/ghorer_shadh_logo.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

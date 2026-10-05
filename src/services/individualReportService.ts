@@ -9,6 +9,7 @@ import {
   MemberMonthlyCalculation,
 } from '../types';
 import { formatMonthLabel } from '../utils/dateUtils';
+import { DEFAULT_APP_NAME } from '../constants/branding';
 
 export class IndividualReportService {
   /**
@@ -643,11 +644,12 @@ export class IndividualReportService {
       }
 
       // 7. Subtle Footer
+      const brandName = settings?.appName || settings?.messName || DEFAULT_APP_NAME;
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(6);
       doc.setTextColor(148, 163, 184);
       doc.text(
-        'Automated individual meal statement generated via MessMate Smart Mess Management system. All rights reserved.',
+        `Automated individual meal statement generated via ${brandName}. All rights reserved.`,
         105,
         282,
         { align: 'center' }

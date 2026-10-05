@@ -3,11 +3,31 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MessMate - Smart Mess Meal Management</title>
-    <meta name="description" content="Smart Mess Meal Management with automated date synchronization, daily meal tracking, deposits, monthly accounting reports, and Excel export." />
-    <meta property="og:title" content="MessMate - Smart Mess Meal Management" />
-    <meta property="og:description" content="Smart Mess Meal Management with automated date synchronization, daily meal tracking, deposits, monthly accounting reports, and Excel export." />
+    <script>
+      // Clear any stale Service Worker or cached hashed scripts
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(regs) {
+          for (var i = 0; i < regs.length; i++) regs[i].unregister();
+        });
+      }
+      if ('caches' in window) {
+        caches.keys().then(function(keys) {
+          for (var i = 0; i < keys.length; i++) caches.delete(keys[i]);
+        });
+      }
+    </script>
+    <title>Ghorer Shadh - ঘরের তৈরি স্বাস্থ্যকর খাবার</title>
+    <meta name="description" content="ঘরের তৈরি স্বাস্থ্যকর খাবার এবং স্মার্ট মেস মিল ও ক্যাটারিং ব্যবস্থাপনা।" />
+    <meta property="og:title" content="Ghorer Shadh - ঘরের তৈরি স্বাস্থ্যকর খাবার" />
+    <meta property="og:description" content="ঘরের তৈরি স্বাস্থ্যকর খাবার এবং স্মার্ট মেস মিল ও ক্যাটারিং ব্যবস্থাপনা।" />
     <meta property="og:type" content="website" />
+    <link rel="icon" type="image/svg+xml" href="/ghorer_shadh_logo.svg" />
+    <link rel="apple-touch-icon" href="/ghorer_shadh_logo.svg" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#0c2e28" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Ghorer Shadh" />
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

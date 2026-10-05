@@ -28,6 +28,7 @@ export interface Member {
   initialDeposit: number;
   isActive: boolean;
   notes?: string;
+  registered?: boolean;
 }
 
 export interface AuthUser {
@@ -47,6 +48,7 @@ export interface MealRecord {
   lunch?: boolean;
   dinner?: boolean;
   notes?: string;
+  source?: 'default' | 'member' | 'admin';
   createdAt: string;
   updatedAt: string;
 }
@@ -75,6 +77,12 @@ export interface Deposit {
   paymentMethod: PaymentMethod;
   note?: string;
   createdAt: string;
+  status?: 'pending' | 'approved' | 'rejected';
+  transactionId?: string;
+  requestedAmount?: number;
+  approvedBy?: string;
+  approvedAt?: string;
+  rejectionReason?: string;
 }
 
 export interface FixedExpense {
@@ -89,6 +97,8 @@ export interface FixedExpense {
 export type MealRateMode = 'bazar_only' | 'bazar_and_fixed' | 'split_fixed_equally';
 
 export interface MessSettings {
+  appName?: string;
+  logo?: string;
   messName: string;
   subtitle: string;
   currency: string;
@@ -229,6 +239,7 @@ export interface MemberMonthlyCalculation {
   totalCost: number;
   totalDeposits: number;
   bazarPaidOutPocket: number;
+  fixedPaidOutPocket?: number;
   totalCredits: number;
   balance: number; // > 0: Refund (+৳), < 0: Due (-৳)
   due: number; // mealCost > deposit ? mealCost - deposit : 0

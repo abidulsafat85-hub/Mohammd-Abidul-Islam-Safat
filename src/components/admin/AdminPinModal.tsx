@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShieldCheck, Lock, ArrowRight, X, AlertCircle } from 'lucide-react';
+import { Lock, ArrowRight, X, AlertCircle } from 'lucide-react';
 import { ApiService } from '../../services/apiService';
 
 interface AdminPinModalProps {

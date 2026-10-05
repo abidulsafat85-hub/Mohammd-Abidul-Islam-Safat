@@ -92,3 +92,22 @@ export function addDays(dateString: string, days: number): string {
   const dd = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${dd}`;
 }
+
+const BANGLA_NUMS: Record<string, string> = {
+  '0': '০', '1': '১', '2': '২', '3': '৩', '4': '৪',
+  '5': '৫', '6': '৬', '7': '৭', '8': '৮', '9': '৯',
+};
+
+export function formatMonthBangla(monthStr: string): string {
+  if (!monthStr) return '';
+  const [year, month] = monthStr.split('-');
+  const monthIdx = parseInt(month, 10) - 1;
+  const banglaMonths = [
+    'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন',
+    'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'
+  ];
+  const monthName = banglaMonths[monthIdx] || month;
+  const banglaYear = String(year).replace(/[0-9]/g, (d) => BANGLA_NUMS[d] || d);
+  return `${monthName} ${banglaYear}`;
+}
+

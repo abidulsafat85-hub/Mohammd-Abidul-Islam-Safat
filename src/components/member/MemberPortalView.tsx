@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { NavLink } from 'react-router-dom';
 import {
   UtensilsCrossed,
   Wallet,
@@ -6,11 +7,10 @@ import {
   CheckCircle2,
   Clock,
   ArrowRight,
-  Shield,
+  ArrowLeft,
   LogOut,
   Plus,
   RefreshCw,
-  Sparkles,
   ShoppingBag,
   FileText,
   Lock,
@@ -27,19 +27,23 @@ import {
   Settings,
   LayoutDashboard,
 } from 'lucide-react';
-import { MemberPortalData, MealRecord, Deposit, BazarExpense, AdvanceMealChoice, MemberMonthlyCalculation, MonthlyAccountingSummary, MessSettings } from '../../types';
+import { MemberPortalData, MealRecord, Deposit, BazarExpense, AdvanceMealChoice, MemberMonthlyCalculation, MonthlyAccountingSummary, MessSettings, AuthUser } from '../../types';
 import { ApiService } from '../../services/apiService';
 import { IndividualReportService } from '../../services/individualReportService';
 import { Modal } from '../common/Modal';
 import { getTodayString, formatDateFull, formatDateShort, getAvailableMonths, getCurrentMonthString } from '../../utils/dateUtils';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { UpcomingMealCards } from './UpcomingMealCards';
+import { useBranding } from '../../hooks/useBranding';
+import { MemberBottomNav } from './MemberBottomNav';
 
 interface MemberPortalViewProps {
   memberId: string;
   onLogout: () => void;
   onOpenAdminLogin: () => void;
   isAdmin?: boolean;
+  authUser?: AuthUser | null;
   allMembersFallback?: any[];
   allMealsFallback?: MealRecord[];
   allDepositsFallback?: Deposit[];
@@ -52,12 +56,14 @@ export const MemberPortalView: React.FC<MemberPortalViewProps> = ({
   onLogout,
   onOpenAdminLogin,
   isAdmin = false,
+  authUser,
   allMembersFallback,
   allMealsFallback,
   allDepositsFallback,
   allBazarFallback,
   settingsFallback,
 }) => {
+  const { appName, logo } = useBranding();
   const [selectedMonth, setSelectedMonth] = useState<string>(() => getCurrentMonthString());
   const [loading, setLoading] = useState(true);
   const [portalData, setPortalData] = useState<MemberPortalData | null>(null);
@@ -455,6 +461,7 @@ export const MemberPortalView: React.FC<MemberPortalViewProps> = ({
         totalFixedExpenses: acc.mySharedFixedCost,
         totalExpenses: acc.myTotalCharges,
         mealRate: acc.mealRate,
+        sharedFixedPerMember: acc.mySharedFixedCost || 0,
         totalDeposits: acc.myTotalDeposits,
         totalMemberCredits: acc.myTotalCredits,
         remainingCashFund: 0,
@@ -514,24 +521,50 @@ export const MemberPortalView: React.FC<MemberPortalViewProps> = ({
       .sort((a, b) => b.date.localeCompare(a.date));
   }, [portalData, selectedMonth]);
 
+  // Registered member name (person who registered)
+  const registeredMemberName = useMemo(() => {
+    if (portalData?.member?.fullName && portalData.member.fullName !== 'মেম্বার পোর্টাল') {
+      return portalData.member.fullName;
+    }
+    if (authUser?.name) return authUser.name;
+    if ((authUser as any)?.fullName) return (authUser as any).fullName;
+    const match = allMembersFallback?.find(
+      (m: any) => m.id === memberId || (authUser?.email && m.email?.toLowerCase() === authUser.email.toLowerCase())
+    );
+    if (match?.fullName) return match.fullName;
+    try {
+      const stored = localStorage.getItem('messmate_auth_user');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed.name) return parsed.name;
+        if (parsed.fullName) return parsed.fullName;
+      }
+    } catch {}
+    return 'মেম্বার';
+  }, [portalData, authUser, allMembersFallback, memberId]);
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 pb-20">
+    <div className="min-h-screen bg-slate-50 text-slate-900 pb-28 sm:pb-20">
       {/* Top Navigation Bar */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-6 py-3.5 shadow-2xs">
         <div className="max-w-5xl mx-auto flex items-center justify-between gap-3">
-          {/* Left Brand & Member Name */}
+          {/* Left Brand Logo & Registered Member Name */}
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-700 text-white flex items-center justify-center font-black text-base shadow-md shadow-emerald-500/20">
-              {portalData?.member.fullName.charAt(0) || 'M'}
+            <div className="h-10 w-10 rounded-full bg-white p-0.5 border border-slate-200/80 shadow-xs flex items-center justify-center overflow-hidden shrink-0 ring-2 ring-emerald-500/20">
+              <img
+                src={logo || '/ghorer_shadh_logo.svg'}
+                alt={appName}
+                className="h-full w-full object-contain rounded-full bg-white"
+              />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-base font-black text-slate-900 leading-tight">
-                  {portalData?.member.fullName || 'মেম্বার পোর্টাল'}
+                <h1 className="text-base sm:text-lg font-black text-slate-900 leading-tight tracking-tight">
+                  ঘরের স্বাদ
                 </h1>
               </div>
               <p className="text-xs text-slate-500 font-medium">
-                {portalData?.member.phone || 'রুম মেম্বার'}
+                {registeredMemberName}
               </p>
             </div>
           </div>
@@ -591,6 +624,16 @@ export const MemberPortalView: React.FC<MemberPortalViewProps> = ({
               <span>টাকা জমা</span>
             </button>
 
+            {/* Logout Button: Visible on desktop, on mobile it is inside Profile per user request */}
+            <button
+              onClick={onLogout}
+              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold rounded-xl border border-rose-200 transition-all cursor-pointer"
+              title="লগআউট করুন"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              <span>লগআউট</span>
+            </button>
+
             {/* Admin Switch: Only visible if the logged in user is Admin */}
             {isAdmin && (
               <button
@@ -598,135 +641,78 @@ export const MemberPortalView: React.FC<MemberPortalViewProps> = ({
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold border border-slate-200 transition-all cursor-pointer"
                 title="মেস এডমিন প্যানেলে ফিরুন"
               >
-                <Shield className="h-3.5 w-3.5 text-emerald-600" />
+                <ArrowLeft className="h-3.5 w-3.5 text-emerald-600" />
                 <span className="hidden md:inline">এডমিন মোড</span>
               </button>
             )}
           </div>
         </div>
+
+        {/* Member Navigation Tabs: Hidden on mobile (bottom nav is used), visible on desktop */}
+        <div className="hidden md:flex max-w-5xl mx-auto border-t border-slate-100 mt-2.5 pt-2 items-center gap-1.5 overflow-x-auto scrollbar-none">
+          <NavLink
+            to="/member/home"
+            className={({ isActive }) =>
+              `px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                isActive ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`
+            }
+          >
+            মিল এন্ট্রি
+          </NavLink>
+          <NavLink
+            to="/member/history"
+            className={({ isActive }) =>
+              `px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                isActive ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`
+            }
+          >
+            Dashboard
+          </NavLink>
+          <NavLink
+            to="/member/payment"
+            className={({ isActive }) =>
+              `px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                isActive ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`
+            }
+          >
+            পেমেন্ট ও জমা (Payment)
+          </NavLink>
+          <NavLink
+            to="/member/complaints"
+            className={({ isActive }) =>
+              `px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                isActive ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`
+            }
+          >
+            অভিযোগ বক্স (Complaints)
+          </NavLink>
+          <NavLink
+            to="/member/profile"
+            className={({ isActive }) =>
+              `px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                isActive ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`
+            }
+          >
+            আমার প্রোফাইল (Profile)
+          </NavLink>
+        </div>
       </header>
 
       {/* Main Container */}
       <main className="max-w-5xl mx-auto px-4 sm:px-6 pt-5 space-y-5">
-        {/* Direct Meal ON/OFF Box */}
-        <div className="bg-slate-900 text-white rounded-3xl p-4 sm:p-5 border border-slate-800 shadow-md space-y-4">
-          {/* Title & Total for Tomorrow */}
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              <p className="text-sm font-black text-white flex items-center gap-1.5">
-                <Sparkles className="h-4 w-4 text-emerald-400" />
-                <span>আগামীকালের অগ্রিম মিল নির্বাচন</span>
-              </p>
-              <p className="text-[11px] text-emerald-400 font-medium mt-0.5">
-                {formatDateFull(tomorrowStr)}
-              </p>
-            </div>
-            <div className="text-right shrink-0">
-              <span className="text-[11px] text-slate-400 block font-medium">আগামীকালের মোট মিল:</span>
-              <span className="text-lg font-black text-white">
-                {tomorrowChoice === 'BOTH' ? '২ টি' : tomorrowChoice === 'NONE' ? '০ টি' : '১ টি'}
-              </span>
-            </div>
-          </div>
-
-          {/* Main 2 Big Square-Rounded Action Cards for Tomorrow */}
-          <div className="grid grid-cols-2 gap-3 sm:gap-4">
-            {/* Lunch Card */}
-            <button
-              type="button"
-              disabled={isSavingTomorrow}
-              onClick={() => {
-                if (tomorrowChoice === 'BOTH') {
-                  handleSelectTomorrowChoice('DINNER_ONLY');
-                } else if (tomorrowChoice === 'LUNCH_ONLY') {
-                  handleSelectTomorrowChoice('NONE');
-                } else if (tomorrowChoice === 'DINNER_ONLY') {
-                  handleSelectTomorrowChoice('BOTH');
-                } else {
-                  handleSelectTomorrowChoice('LUNCH_ONLY');
-                }
-              }}
-              className={`p-4 rounded-2xl border flex flex-col items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 ${
-                tomorrowChoice === 'BOTH' || tomorrowChoice === 'LUNCH_ONLY'
-                  ? 'bg-emerald-600 text-white border-emerald-500 shadow-md shadow-emerald-950/20'
-                  : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-750'
-              }`}
-              title="আগামীকালের দুপুরের মিল চালু বা বন্ধ করতে ক্লিক করুন"
-            >
-              <Sun className={`h-6 w-6 ${tomorrowChoice === 'BOTH' || tomorrowChoice === 'LUNCH_ONLY' ? 'text-amber-200' : 'text-slate-400'}`} />
-              <span className="text-xs sm:text-sm font-extrabold">দুপুর (Lunch)</span>
-              <span
-                className={`text-[11px] sm:text-xs font-black px-2.5 py-0.5 rounded-lg flex items-center gap-1 ${
-                  tomorrowChoice === 'BOTH' || tomorrowChoice === 'LUNCH_ONLY'
-                    ? 'bg-emerald-700 text-white'
-                    : 'bg-slate-700 text-slate-400'
-                }`}
-              >
-                {tomorrowChoice === 'BOTH' || tomorrowChoice === 'LUNCH_ONLY' ? '✓ চালু (১ মিল)' : '✕ বন্ধ (০ মিল)'}
-              </span>
-            </button>
-
-            {/* Dinner Card */}
-            <button
-              type="button"
-              disabled={isSavingTomorrow}
-              onClick={() => {
-                if (tomorrowChoice === 'BOTH') {
-                  handleSelectTomorrowChoice('LUNCH_ONLY');
-                } else if (tomorrowChoice === 'DINNER_ONLY') {
-                  handleSelectTomorrowChoice('NONE');
-                } else if (tomorrowChoice === 'LUNCH_ONLY') {
-                  handleSelectTomorrowChoice('BOTH');
-                } else {
-                  handleSelectTomorrowChoice('DINNER_ONLY');
-                }
-              }}
-              className={`p-4 rounded-2xl border flex flex-col items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 ${
-                tomorrowChoice === 'BOTH' || tomorrowChoice === 'DINNER_ONLY'
-                  ? 'bg-emerald-600 text-white border-emerald-500 shadow-md shadow-emerald-950/20'
-                  : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-750'
-              }`}
-              title="আগামীকালের রাতের মিল চালু বা বন্ধ করতে ক্লিক করুন"
-            >
-              <Moon className={`h-6 w-6 ${tomorrowChoice === 'BOTH' || tomorrowChoice === 'DINNER_ONLY' ? 'text-blue-200' : 'text-slate-400'}`} />
-              <span className="text-xs sm:text-sm font-extrabold">রাত (Dinner)</span>
-              <span
-                className={`text-[11px] sm:text-xs font-black px-2.5 py-0.5 rounded-lg flex items-center gap-1 ${
-                  tomorrowChoice === 'BOTH' || tomorrowChoice === 'DINNER_ONLY'
-                    ? 'bg-emerald-700 text-white'
-                    : 'bg-slate-700 text-slate-400'
-                }`}
-              >
-                {tomorrowChoice === 'BOTH' || tomorrowChoice === 'DINNER_ONLY' ? '✓ চালু (১ মিল)' : '✕ বন্ধ (০ মিল)'}
-              </span>
-            </button>
-          </div>
-
-          {/* Bottom Quick Actions (All OFF / All ON) */}
-          <div className="pt-1 flex items-center justify-between gap-2 border-t border-slate-800 text-xs">
-            <span className="text-[11px] text-slate-400">
-              {isSavingTomorrow ? 'সংরক্ষণ করা হচ্ছে...' : 'ক্লিক করলেই সাথে সাথে সেভ হয়ে যাবে'}
-            </span>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                disabled={isSavingTomorrow}
-                onClick={() => handleSelectTomorrowChoice('NONE')}
-                className="px-2.5 py-1 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 text-[11px] font-bold transition-all cursor-pointer disabled:opacity-50"
-              >
-                সব মিল বন্ধ (Off)
-              </button>
-              <button
-                type="button"
-                disabled={isSavingTomorrow}
-                onClick={() => handleSelectTomorrowChoice('BOTH')}
-                className="px-2.5 py-1 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold transition-all cursor-pointer disabled:opacity-50"
-              >
-                সব মিল চালু (On)
-              </button>
-            </div>
-          </div>
-        </div>
+        {/* Upcoming 7-Day Meal Cards with Tomorrow Featured & Auto-Lock (Part H) */}
+        <UpcomingMealCards
+          memberId={memberId}
+          meals={portalData?.meals || []}
+          onMealUpdated={() => {
+            loadData();
+          }}
+        />
 
         {/* 1. PERSONAL FINANCIAL OVERVIEW CARD */}
         {acc && (
@@ -1423,6 +1409,9 @@ export const MemberPortalView: React.FC<MemberPortalViewProps> = ({
           </div>
         </Modal>
       )}
+
+      {/* Fixed Soft RGB Animated Bottom Navigation Bar on Mobile Phone */}
+      <MemberBottomNav />
     </div>
   );
 };

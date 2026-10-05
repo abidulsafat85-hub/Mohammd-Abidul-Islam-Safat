@@ -1,20 +1,24 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { DEFAULT_APP_NAME, DEFAULT_LOGO } from '../constants/branding';
 
 export interface BrandingData {
   appName: string;
   logo?: string;
+  currency?: string;
 }
 
 interface BrandingContextType {
   appName: string;
   logo?: string;
+  currency: string;
   setBranding: (appName: string, logo?: string | null) => Promise<{ success: boolean; error?: string }>;
   reloadBranding: () => Promise<void>;
 }
 
 const BrandingContext = createContext<BrandingContextType>({
-  appName: 'MessMate',
-  logo: undefined,
+  appName: DEFAULT_APP_NAME,
+  logo: DEFAULT_LOGO,
+  currency: '৳',
   setBranding: async () => ({ success: true }),
   reloadBranding: async () => {},
 });
@@ -24,11 +28,12 @@ export function getCachedBranding(): BrandingData {
     const savedName = localStorage.getItem('messmate_branding_app_name');
     const savedLogo = localStorage.getItem('messmate_branding_logo');
     return {
-      appName: savedName && savedName.trim() ? savedName.trim() : 'MessMate',
-      logo: savedLogo || undefined,
+      appName: savedName && savedName.trim() ? savedName.trim() : DEFAULT_APP_NAME,
+      logo: savedLogo || DEFAULT_LOGO,
+      currency: '৳',
     };
   } catch {
-    return { appName: 'MessMate' };
+    return { appName: DEFAULT_APP_NAME, logo: DEFAULT_LOGO, currency: '৳' };
   }
 }
 
@@ -85,8 +90,7 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Set new branding (saves to server and updates local state without page reload)
   const setBranding = useCallback(
     async (newAppName: string, newLogo?: string | null): Promise<{ success: boolean; error?: string }> => {
-      const cleanName = (newAppName || '').trim() || 'MessMate';
-      const token = localStorage.getItem('messmate_auth_token');
+      const cleanName = (newAppName || '').trim() || DEFAULT_APP_NAME;
 
       try {
         const res = await fetch('/api/mess/admin/branding', {
@@ -94,7 +98,6 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           body: JSON.stringify({
             appName: cleanName,
@@ -136,6 +139,7 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       value={{
         appName: branding.appName,
         logo: branding.logo,
+        currency: branding.currency || '৳',
         setBranding,
         reloadBranding,
       }}

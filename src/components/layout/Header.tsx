@@ -7,7 +7,6 @@ import {
   ChevronDown,
   Share2,
   Users,
-  Shield,
   LogOut,
 } from 'lucide-react';
 import { MessSettings, AuthUser } from '../../types';
@@ -49,11 +48,15 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex flex-wrap items-center gap-3">
           {/* Mobile brand indicator */}
           <div className="lg:hidden flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white font-bold text-sm">
-              <UtensilsCrossed className="h-4 w-4" />
+            <div className="h-8 w-8 rounded-full bg-white p-0.5 border border-slate-200/80 shadow-2xs flex items-center justify-center overflow-hidden shrink-0">
+              <img
+                src={settings.logo || '/ghorer_shadh_logo.svg'}
+                alt={settings.appName || 'ঘরের স্বাদ'}
+                className="h-full w-full object-contain rounded-full bg-white"
+              />
             </div>
             <span className="font-extrabold text-slate-900 text-sm">
-              {settings.messName}
+              {settings.appName || settings.messName || 'ঘরের স্বাদ'}
             </span>
             <span className="text-[10px] font-black bg-slate-900 text-emerald-400 px-2 py-0.5 rounded-full">
               ADMIN
@@ -62,7 +65,7 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Desktop Admin Mode Badge */}
           <div className="hidden lg:flex items-center gap-1.5 bg-slate-900 text-white text-xs font-bold px-2.5 py-1.5 rounded-xl">
-            <Shield className="h-3.5 w-3.5 text-emerald-400" />
+            <span className="h-2 w-2 rounded-full bg-emerald-400"></span>
             <span>এডমিন প্যানেল</span>
           </div>
 
@@ -104,8 +107,8 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Right: Quick Action Buttons */}
-        <div className="flex flex-wrap items-center gap-2">
+        {/* Right: Quick Action Buttons (Hidden on phone screens per user request) */}
+        <div className="hidden md:flex flex-wrap items-center gap-2">
           {/* Share Member Links Button */}
           {onOpenShareLinks && (
             <button

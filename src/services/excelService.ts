@@ -7,6 +7,7 @@ import {
   MonthlyAccountingSummary,
   MessSettings,
 } from '../types';
+import { DEFAULT_APP_NAME } from '../constants/branding';
 
 export interface ImportPreviewData {
   members: Partial<Member>[];
@@ -135,43 +136,41 @@ export class ExcelService {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `${settings.messName.replace(/\s+/g, '_')}_${summary.month}.csv`);
+    const baseName = (settings.appName || settings.messName || DEFAULT_APP_NAME).replace(/\s+/g, '_');
+    link.setAttribute('download', `${baseName}_${summary.month}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   }
 
   // Download a clean Excel template
-  static downloadTemplate(): void {
+  static downloadTemplate(appName?: string): void {
     const wb = XLSX.utils.book_new();
 
     const sampleMembers = [
-      { 'Full Name': 'Abidul Safat', 'Nickname': 'Safat', 'Phone': '01712345678', 'Initial Deposit': 0, 'Active': 'YES' },
-      { 'Full Name': 'Abdur Rahim', 'Nickname': 'Rahim', 'Phone': '01812345679', 'Initial Deposit': 0, 'Active': 'YES' },
-      { 'Full Name': 'Rezaul Karim', 'Nickname': 'Karim', 'Phone': '01912345680', 'Initial Deposit': 0, 'Active': 'YES' },
+      { 'Full Name': 'সদস্য ১', 'Nickname': 'Member 1', 'Phone': '', 'Initial Deposit': 0, 'Active': 'YES' },
+      { 'Full Name': 'সদস্য ২', 'Nickname': 'Member 2', 'Phone': '', 'Initial Deposit': 0, 'Active': 'YES' },
     ];
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sampleMembers), 'Members');
 
     const sampleMeals = [
-      { 'Date': '2026-09-01', 'Member Name': 'Abidul Safat', 'Meal Count': 2 },
-      { 'Date': '2026-09-01', 'Member Name': 'Abdur Rahim', 'Meal Count': 2 },
-      { 'Date': '2026-09-01', 'Member Name': 'Rezaul Karim', 'Meal Count': 1 },
+      { 'Date': '2026-10-01', 'Member Name': 'সদস্য ১', 'Meal Count': 2 },
+      { 'Date': '2026-10-01', 'Member Name': 'সদস্য ২', 'Meal Count': 2 },
     ];
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sampleMeals), 'Meals');
 
     const sampleBazar = [
-      { 'Date': '2026-09-01', 'Description': 'Rice (50kg)', 'Category': 'Rice', 'Amount': 3450, 'Paid By': 'Abidul Safat', 'Note': 'Miniket' },
-      { 'Date': '2026-09-02', 'Description': 'Vegetables', 'Category': 'Vegetable', 'Amount': 500, 'Paid By': 'Abdur Rahim', 'Note': '' },
+      { 'Date': '2026-10-01', 'Description': 'চাল (৫০ কেজি)', 'Category': 'চাল', 'Amount': 3200, 'Paid By': '', 'Note': '' },
     ];
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sampleBazar), 'Bazar');
 
     const sampleDeposits = [
-      { 'Date': '2026-09-01', 'Member Name': 'Abidul Safat', 'Amount': 2000, 'Method': 'bKash', 'Note': 'Advance' },
-      { 'Date': '2026-09-01', 'Member Name': 'Abdur Rahim', 'Amount': 2000, 'Method': 'Cash', 'Note': '' },
+      { 'Date': '2026-10-01', 'Member Name': 'সদস্য ১', 'Amount': 2000, 'Method': 'Cash', 'Note': 'জমা' },
     ];
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sampleDeposits), 'Deposits');
 
-    XLSX.writeFile(wb, 'MessMate_Excel_Template.xlsx');
+    const safeName = (appName || DEFAULT_APP_NAME).replace(/\s+/g, '_');
+    XLSX.writeFile(wb, `${safeName}_Excel_Template.xlsx`);
   }
 
   // Parse Excel file and extract preview data

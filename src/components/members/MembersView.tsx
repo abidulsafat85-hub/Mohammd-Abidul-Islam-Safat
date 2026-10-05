@@ -21,6 +21,9 @@ import {
   Copy,
   Check,
   MapPin,
+  GraduationCap,
+  FileText,
+  Mail,
 } from 'lucide-react';
 import {
   Member,
@@ -30,7 +33,6 @@ import {
   MessSettings,
   MonthlyAccountingSummary,
 } from '../../types';
-import { StorageService } from '../../services/storage';
 import { Modal } from '../common/Modal';
 import { formatCurrency } from '../../services/calculations';
 import { formatDateShort } from '../../utils/dateUtils';
@@ -66,12 +68,18 @@ export const MembersView: React.FC<MembersViewProps> = ({
   const [editingMember, setEditingMember] = useState<Member | null>(null);
   const [viewingMember, setViewingMember] = useState<Member | null>(null);
   const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
+  const [showDeleteUnregisteredModal, setShowDeleteUnregisteredModal] = useState(false);
+  const [deleteUnregisteredLoading, setDeleteUnregisteredLoading] = useState(false);
 
-  // Form states - Member Name, Total Deposit Amount, WhatsApp Phone Number, and 4-digit PIN
+  // Form states - Member Name, Total Deposit Amount, WhatsApp Phone Number, Student ID & Documents
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
-  const [pin, setPin] = useState('1234');
-  const [totalDeposit, setTotalDeposit] = useState<number>(0);
+  const [universityId, setUniversityId] = useState('');
+  const [location, setLocation] = useState('');
+  const [parentPhone, setParentPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [notes, setNotes] = useState('');
+  const [totalDeposit, setTotalDeposit] = useState<string>('');
   const [formError, setFormError] = useState<string | null>(null);
   const [copiedMemberId, setCopiedMemberId] = useState<string | null>(null);
 
@@ -80,8 +88,12 @@ export const MembersView: React.FC<MembersViewProps> = ({
     setEditingMember(null);
     setFullName('');
     setPhone('');
-    setPin('1234');
-    setTotalDeposit(0);
+    setUniversityId('');
+    setLocation('');
+    setParentPhone('');
+    setEmail('');
+    setNotes('');
+    setTotalDeposit('');
     setFormError(null);
     setIsModalOpen(true);
   };
@@ -91,11 +103,16 @@ export const MembersView: React.FC<MembersViewProps> = ({
     setEditingMember(member);
     setFullName(member.fullName);
     setPhone(member.phone || '');
-    setPin(member.pin || '1234');
+    setUniversityId(member.universityId || '');
+    setLocation(member.location || '');
+    setParentPhone(member.parentPhone || '');
+    setEmail(member.email || '');
+    setNotes(member.notes || '');
     const currentDeposit = deposits
       .filter((d) => d.memberId === member.id && d.date.startsWith(summary.month))
       .reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
-    setTotalDeposit(currentDeposit > 0 ? currentDeposit : (Number(member.initialDeposit) || 0));
+    const depVal = currentDeposit > 0 ? currentDeposit : (Number(member.initialDeposit) || 0);
+    setTotalDeposit(depVal > 0 ? String(depVal) : '');
     setFormError(null);
     setIsModalOpen(true);
   };
@@ -109,20 +126,26 @@ export const MembersView: React.FC<MembersViewProps> = ({
     }
 
     const cleanPhone = cleanInternationalPhone(phone);
+    const depositNum = totalDeposit.trim() === '' ? 0 : Number(totalDeposit) || 0;
 
     const memberData: Member = {
       id: editingMember ? editingMember.id : `mem-${Date.now()}`,
       fullName: fullName.trim(),
       nickname: editingMember?.nickname,
       phone: cleanPhone || undefined,
-      pin: pin.trim() || '1234',
+      universityId: universityId.trim() || undefined,
+      location: location.trim() || undefined,
+      parentPhone: parentPhone.trim() || undefined,
+      email: email.trim() || undefined,
+      notes: notes.trim() || undefined,
+      pin: editingMember?.pin || '1234',
       joinDate: editingMember?.joinDate || new Date().toISOString().split('T')[0],
-      initialDeposit: Number(totalDeposit) || 0,
+      initialDeposit: depositNum,
       isActive: editingMember ? editingMember.isActive : true,
-      notes: editingMember?.notes,
+      registered: editingMember?.registered,
     };
 
-    onSaveMember(memberData, Number(totalDeposit) || 0);
+    onSaveMember(memberData, depositNum);
     setIsModalOpen(false);
   };
 
@@ -178,14 +201,25 @@ export const MembersView: React.FC<MembersViewProps> = ({
           </p>
         </div>
 
-        <button
-          id="btn-add-member"
-          onClick={handleOpenAdd}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-sm shadow-emerald-600/20 transition-all cursor-pointer"
-        >
-          <UserPlus className="h-4 w-4" />
-          <span>Add Member (নতুন সদস্য)</span>
-        </button>
+        <div className="flex items-center gap-2">
+          {members.filter((m) => !m.registered).length > 0 && (
+            <button
+              onClick={() => setShowDeleteUnregisteredModal(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs cursor-pointer transition-colors"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              <span>অনিবন্ধিত মেম্বার মুছুন ({members.filter((m) => !m.registered).length})</span>
+            </button>
+          )}
+          <button
+            id="btn-add-member"
+            onClick={handleOpenAdd}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-sm shadow-emerald-600/20 transition-all cursor-pointer"
+          >
+            <UserPlus className="h-4 w-4" />
+            <span>Add Member (নতুন সদস্য)</span>
+          </button>
+        </div>
       </div>
 
       {/* Filter and Search Bar */}
@@ -280,6 +314,17 @@ export const MembersView: React.FC<MembersViewProps> = ({
                         {member.fullName}
                       </h4>
                     </div>
+                    <div className="mt-0.5">
+                      {member.registered ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                          নিবন্ধিত (Registered)
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
+                          অনিবন্ধিত (Not registered)
+                        </span>
+                      )}
+                    </div>
                     {member.email && (
                       <span className="text-[11px] text-slate-400 font-mono block">
                         {member.email}
@@ -357,7 +402,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    const url = `${window.location.origin}${window.location.pathname}?member=${encodeURIComponent(member.id)}`;
+                    const url = `${window.location.origin}/member/meal`;
                     navigator.clipboard.writeText(url);
                     setCopiedMemberId(member.id);
                     setTimeout(() => setCopiedMemberId(null), 2500);
@@ -474,47 +519,109 @@ export const MembersView: React.FC<MembersViewProps> = ({
             </p>
           </div>
 
-          {/* Field 3: Total Deposit Amount */}
+          {/* Field 3: Total Deposit Amount (No sticky 0, type anything freely) */}
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1.5">
               Total Deposit Amount ({settings.currency})
             </label>
             <input
-              type="number"
+              type="text"
+              inputMode="decimal"
               id="member-total-deposit-input"
               value={totalDeposit}
-              onChange={(e) => setTotalDeposit(Math.max(0, Number(e.target.value)))}
-              min="0"
-              step="any"
-              placeholder="0"
+              onChange={(e) => setTotalDeposit(e.target.value)}
+              placeholder="জমার পরিমাণ লিখুন (যেমন: ৫০০ বা খালি রাখুন)"
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none font-bold"
             />
             <p className="text-[11px] text-slate-400 mt-1">
-              Main deposit amount used across all calculations, dashboard, and reports.
+              মেসের মিল ও খরচের সাথে সমন্বয় করা মূল জমা টাকা।
             </p>
           </div>
 
-          {/* Field 4: 4-digit PIN */}
+          {/* Field 4: Student ID (ভার্সিটি / স্টুডেন্ট আইডি নং) */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
-              <span className="flex items-center gap-1.5">
-                <Key className="h-3.5 w-3.5 text-amber-600" />
-                <span>Personal Access PIN (গোপন পিন কোড)</span>
-              </span>
-              <span className="text-[11px] font-normal text-slate-400">৪ ডিজিটের পিন</span>
+            <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+              <GraduationCap className="h-4 w-4 text-emerald-600" />
+              <span>Student ID (ভার্সিটি / স্টুডেন্ট আইডি নং)</span>
             </label>
             <input
               type="text"
-              id="member-pin-input"
-              value={pin}
-              onChange={(e) => setPin(e.target.value)}
-              placeholder="1234"
-              maxLength={8}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none font-mono font-bold"
+              id="member-studentid-input"
+              value={universityId}
+              onChange={(e) => setUniversityId(e.target.value)}
+              placeholder="রেজিস্ট্রেশনকৃত আইডি যেমন: 2022-1-60-001"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none font-mono font-medium"
             />
             <p className="text-[11px] text-slate-400 mt-1">
-              মেম্বার এই পিন দিয়ে তার ব্যক্তিগত পোর্টালে ঢুকবে এবং নিজের মিল পূরণ করবে (ডিফল্ট: 1234)।
+              রেজিস্ট্রেশনের সময় প্রদানকৃত বিশ্ববিদ্যালয়ের ছাত্র/ছাত্রী আইডি নম্বর।
             </p>
+          </div>
+
+          {/* Field 5: Student Documents & Information (রেজিস্ট্রেশনের সময় প্রদত্ত ডকুমেন্টস ও তথ্য) */}
+          <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-3">
+            <div className="flex items-center gap-1.5 text-xs font-black text-slate-800">
+              <FileText className="h-4 w-4 text-emerald-600" />
+              <span>রেজিস্ট্রেশনের সময় প্রদত্ত তথ্য ও ডকুমেন্টস (Documents)</span>
+            </div>
+
+            {/* Room / Address */}
+            <div>
+              <label className="block text-[11px] font-bold text-slate-600 mb-1 flex items-center gap-1">
+                <MapPin className="h-3 w-3 text-slate-500" />
+                <span>রুম নম্বর বা বর্তমান ঠিকানা (Room / Address):</span>
+              </label>
+              <input
+                type="text"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="যেমন: রুম ৩০২, ৩য় তলা / মিরপুর"
+                className="w-full px-3 py-2 bg-white rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+              />
+            </div>
+
+            {/* Parent Phone */}
+            <div>
+              <label className="block text-[11px] font-bold text-slate-600 mb-1 flex items-center gap-1">
+                <Phone className="h-3 w-3 text-slate-500" />
+                <span>মা/বাবার (অভিভাবক) ফোন নম্বর:</span>
+              </label>
+              <input
+                type="tel"
+                value={parentPhone}
+                onChange={(e) => setParentPhone(e.target.value)}
+                placeholder="যেমন: 01711000000"
+                className="w-full px-3 py-2 bg-white rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+              />
+            </div>
+
+            {/* Email */}
+            <div>
+              <label className="block text-[11px] font-bold text-slate-600 mb-1 flex items-center gap-1">
+                <Mail className="h-3 w-3 text-slate-500" />
+                <span>ইমেইল অ্যাড্রেস (Email):</span>
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="student@gmail.com"
+                className="w-full px-3 py-2 bg-white rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+              />
+            </div>
+
+            {/* Notes / Documents details */}
+            <div>
+              <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                ডকুমেন্টস বিবরণী বা বিশেষ নোট:
+              </label>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={2}
+                placeholder="আইডি কার্ড বা জাতীয় পরিচয়পত্রের তথ্য, জমা দেওয়া ডকুমেন্টস ইত্যাদি..."
+                className="w-full px-3 py-2 bg-white rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+              />
+            </div>
           </div>
 
           <div className="pt-4 flex items-center justify-between gap-2 border-t border-slate-100">
@@ -639,6 +746,18 @@ export const MembersView: React.FC<MembersViewProps> = ({
                         <MapPin className="h-3 w-3 text-emerald-600" />
                         {viewingMember.location}
                       </span>
+                    </div>
+                  )}
+                  {viewingMember.email && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-500">ইমেইল:</span>
+                      <span className="font-bold text-slate-900 text-xs">{viewingMember.email}</span>
+                    </div>
+                  )}
+                  {viewingMember.notes && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-500">ডকুমেন্টস / নোট:</span>
+                      <span className="font-medium text-slate-800 text-xs italic">{viewingMember.notes}</span>
                     </div>
                   )}
                   <div className="flex justify-between">
@@ -779,6 +898,92 @@ export const MembersView: React.FC<MembersViewProps> = ({
               >
                 <Trash2 className="h-4 w-4" />
                 <span>Yes, Delete Member (ডিলিট করুন)</span>
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Delete All Unregistered Members Modal (Task 4) */}
+      {showDeleteUnregisteredModal && (
+        <Modal
+          isOpen={showDeleteUnregisteredModal}
+          onClose={() => setShowDeleteUnregisteredModal(false)}
+          title="Delete Unregistered Members (অনিবন্ধিত মেম্বার মুছুন)"
+          subtitle="যারা নিজে রেজিস্ট্রেশন করেননি তাদের একাউন্ট ও মিল রেকর্ড মুছে ফেলা হবে।"
+        >
+          <div className="space-y-4">
+            <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-slate-800 space-y-3">
+              <div className="flex items-center gap-2 text-amber-800 font-bold text-sm">
+                <AlertTriangle className="h-5 w-5 shrink-0" />
+                <span>সতর্কতা: হিসাব ও ব্যালেন্স পরিবর্তন হবে</span>
+              </div>
+              <p className="text-xs text-amber-950 leading-relaxed">
+                অনিবন্ধিত মেম্বারদের মুছে ফেললে তাদের নামের মিল ও ডিপোজিট মুছে যাবে, ফলে মেসের বর্তমান মাসের মোট মিল ও প্রত্যেকের বাকি/পাওনা পরিবর্তিত হতে পারে। ডিলিট করার আগে বর্তমান হিসাবের ব্যাকআপ ডাউনলোড করার পরামর্শ দেওয়া হচ্ছে।
+              </p>
+              
+              <div className="pt-1">
+                <a
+                  href="/api/mess/backup/export"
+                  download
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs cursor-pointer"
+                >
+                  <span>Download Backup</span>
+                </a>
+              </div>
+            </div>
+
+            <div>
+              <span className="text-xs font-bold text-slate-700 block mb-2">
+                ডিলিট হতে যাওয়া মেম্বারদের তালিকা ({members.filter((m) => !m.registered).length} জন):
+              </span>
+              <div className="max-h-48 overflow-y-auto space-y-1.5 p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs">
+                {members
+                  .filter((m) => !m.registered)
+                  .map((m, idx) => (
+                    <div key={m.id} className="flex items-center justify-between py-1 border-b border-slate-200/60 last:border-0">
+                      <span className="font-semibold text-slate-900">{idx + 1}. {m.fullName}</span>
+                      <span className="text-[11px] text-slate-500 font-mono">{m.phone || 'No phone'}</span>
+                    </div>
+                  ))}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setShowDeleteUnregisteredModal(false)}
+                className="px-4 py-2.5 rounded-xl text-slate-600 font-bold text-sm hover:bg-slate-100 cursor-pointer"
+              >
+                বাতিল
+              </button>
+              <button
+                type="button"
+                disabled={deleteUnregisteredLoading}
+                onClick={async () => {
+                  setDeleteUnregisteredLoading(true);
+                  try {
+                    const res = await fetch('/api/mess/members/delete-unregistered', {
+                      method: 'POST',
+                      credentials: 'include',
+                    });
+                    const json = await res.json();
+                    if (json.success) {
+                      setShowDeleteUnregisteredModal(false);
+                      window.location.reload();
+                    } else {
+                      alert(json.error || 'ডিলিট করা যায়নি');
+                    }
+                  } catch (e: any) {
+                    alert(e.message || 'ত্রুটি হয়েছে');
+                  } finally {
+                    setDeleteUnregisteredLoading(false);
+                  }
+                }}
+                className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                <Trash2 className="h-4 w-4" />
+                <span>{deleteUnregisteredLoading ? 'ডিলিট হচ্ছে...' : 'হ্যাঁ, সব অনিবন্ধিত মুছুন'}</span>
               </button>
             </div>
           </div>

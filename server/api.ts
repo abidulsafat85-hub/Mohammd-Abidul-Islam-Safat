@@ -1,6 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { WhatsAppAutomationService, PollVoteStatus } from './whatsappService';
 import { requireAdmin } from './auth';
+import { Repository } from './repository';
+import { sendUltraMsgMessage, checkGatewayStatus, normalizeBangladeshPhone } from './whatsappSender';
 
 export const whatsappRouter = Router();
 const service = WhatsAppAutomationService.getInstance();
@@ -322,5 +324,61 @@ whatsappRouter.post('/gateway/test', async (req: Request, res: Response) => {
     res.json(result);
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 11. WhatsApp Gateway Live Status (Section 2b & 2c)
+whatsappRouter.get('/gateway/status', async (_req: Request, res: Response) => {
+  try {
+    const status = await checkGatewayStatus();
+    res.json({ success: true, ...status });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 12. Send WhatsApp Direct / Template Message from UI (Section 2a & 2d)
+whatsappRouter.post('/send-message', async (req: Request, res: Response) => {
+  try {
+    const { phone, message, messageType, memberId, forceDuplicate } = req.body;
+    if (!phone || !message) {
+      return res.status(400).json({ success: false, error: 'ফোন নম্বর ও মেসেজ আবশ্যক' });
+    }
+
+    // Check same-day duplicate-send confirmation (Section 2d)
+    if (!forceDuplicate) {
+      const logs = await Repository.getWhatsAppLogs(50);
+      const todayDhaka = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Dhaka' });
+      const duplicate = logs.find((l) => {
+        const logDate = l.timestamp ? new Date(l.timestamp).toLocaleDateString('en-CA', { timeZone: 'Asia/Dhaka' }) : '';
+        return logDate === todayDhaka && l.phone === normalizeBangladeshPhone(phone) && l.status === 'sent';
+      });
+      if (duplicate) {
+        return res.status(409).json({
+          success: false,
+          isDuplicate: true,
+          error: 'আজকে ইতিমধ্যে এই নম্বরে মেসেজ পাঠানো হয়েছে। আপনি কি নিশ্চিত আবার পাঠাতে চান?',
+        });
+      }
+    }
+
+    const result = await sendUltraMsgMessage(phone, message, messageType || 'direct', memberId);
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 13. Admin Message Logs (Section 2d)
+whatsappRouter.get('/logs', async (req: Request, res: Response) => {
+  try {
+    const limit = Number(req.query.limit) || 100;
+    const logs = await Repository.getWhatsAppLogs(limit);
+    res.json({ success: true, data: logs });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
   }
 });

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Lock, ArrowRight, Shield, AlertCircle, CheckCircle2, KeyRound } from 'lucide-react';
+import { Users, Lock, ArrowRight, AlertCircle, CheckCircle2, KeyRound } from 'lucide-react';
 import { ApiService } from '../../services/apiService';
 import { Member } from '../../types';
 
@@ -170,8 +170,8 @@ export const MemberAuthModal: React.FC<MemberAuthModalProps> = ({
             onClick={onOpenAdminLogin}
             className="font-bold text-emerald-700 hover:text-emerald-800 hover:underline flex items-center gap-1 cursor-pointer"
           >
-            <Shield className="h-3.5 w-3.5" />
             <span>এডমিন প্যানেলে লগইন</span>
+            <ArrowRight className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>

@@ -13,12 +13,10 @@ import {
   FileUp,
   Sliders,
   DollarSign,
-  ShieldCheck,
   Lock,
   Eye,
   EyeOff,
   Image as ImageIcon,
-  Sparkles,
   X,
 } from 'lucide-react';
 import { MessSettings, MealRateMode, Member, MealRecord, BazarExpense, Deposit, FixedExpense } from '../../types';
@@ -155,12 +153,19 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
   // Download Backup JSON
   const handleBackupDownload = () => {
-    const jsonStr = StorageService.createBackup();
+    const jsonStr = StorageService.createBackupFromState({
+      members,
+      meals,
+      bazar,
+      deposits,
+      settings,
+    });
     const blob = new Blob([jsonStr], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `MessMate_Backup_${new Date().toISOString().split('T')[0]}.json`;
+    const safeName = (appName || 'Ghorer_Shadh').replace(/\s+/g, '_');
+    link.download = `${safeName}_Backup_${new Date().toISOString().split('T')[0]}.json`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -487,7 +492,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {/* Backup & Restore Section */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6">
         <div className="flex items-center gap-2.5 pb-4 border-b border-slate-100">
-          <ShieldCheck className="h-5 w-5 text-blue-600" />
+          <Download className="h-5 w-5 text-blue-600" />
           <h3 className="font-extrabold text-slate-900 text-lg">Backup & Restore Offline Database</h3>
         </div>
 

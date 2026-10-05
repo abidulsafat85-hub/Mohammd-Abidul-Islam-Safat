@@ -14,10 +14,17 @@ import {
   PollVoteStatus,
   AuthUser,
 } from './types';
-import { StorageService } from './services/storage';
 import { ApiService } from './services/apiService';
 import { calculateMonthlySummary } from './services/calculations';
 import { getCurrentMonthString, getTodayString } from './utils/dateUtils';
+import {
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+  useNavigate,
+  useSearchParams,
+} from 'react-router-dom';
 import { Sidebar, NavTab } from './components/layout/Sidebar';
 import { BottomNav } from './components/layout/BottomNav';
 import { Header } from './components/layout/Header';
@@ -34,18 +41,32 @@ import { MemberPortalView } from './components/member/MemberPortalView';
 import { ShareLinksModal } from './components/admin/ShareLinksModal';
 import { LoginView } from './components/auth/LoginView';
 import { AdminForcePasswordChange } from './components/auth/AdminForcePasswordChange';
+import { HomePage } from './pages/HomePage';
+import { RegisterPage } from './pages/RegisterPage';
+import { OrderPage } from './pages/OrderPage';
+import { OrderStatusPage } from './pages/OrderStatusPage';
+import { NotFoundPage } from './pages/NotFoundPage';
+import { MemberMealPage } from './components/member/MemberMealPage';
+import { MemberHistoryPage } from './components/member/MemberHistoryPage';
+import { MemberPaymentPage } from './components/member/MemberPaymentPage';
+import { MemberComplaintsPage } from './components/member/MemberComplaintsPage';
+import { MemberProfilePage } from './components/member/MemberProfilePage';
+import { OrdersView } from './components/admin/OrdersView';
+import { DEFAULT_APP_NAME, DEFAULT_LOGO } from './constants/branding';
 
 const ADMIN_EMAIL = 'abidulsafat85@gmail.com';
 
 export default function App() {
-  // Authentication State: persistent in localStorage
+  // Authentication State: loaded synchronously from localStorage if available, then verified from server
   const [authUser, setAuthUser] = useState<AuthUser | null>(() => {
     try {
-      const saved = localStorage.getItem('messmate_auth_user');
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return null;
+      const stored = localStorage.getItem('messmate_auth_user');
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
   });
+  const [authChecking, setAuthChecking] = useState<boolean>(true);
 
   // Check if current authenticated user is the Admin / Manager
   const isAdmin = useMemo(() => {
@@ -88,44 +109,25 @@ export default function App() {
     };
   }, []);
 
-  // Core Data loaded from persistent offline storage
-  const [members, setMembers] = useState<Member[]>(() => StorageService.getMembers());
-  const [meals, setMeals] = useState<MealRecord[]>(() => StorageService.getMeals());
-  const [bazar, setBazar] = useState<BazarExpense[]>(() => StorageService.getBazar());
-  const [deposits, setDeposits] = useState<Deposit[]>(() => {
-    const rawDeps = StorageService.getDeposits();
-    const rawMembers = StorageService.getMembers();
-    let hasAdditions = false;
-    const synced = [...rawDeps];
-    rawMembers.forEach((m) => {
-      const initDep = Number(m.initialDeposit) || 0;
-      if (initDep > 0) {
-        const hasDep = synced.some((d) => d.memberId === m.id);
-        if (!hasDep) {
-          synced.push({
-            id: `dep-init-${m.id}`,
-            memberId: m.id,
-            date: `2026-09-01`,
-            amount: initDep,
-            paymentMethod: 'Cash',
-            note: 'Initial Deposit',
-            createdAt: new Date().toISOString(),
-          });
-          hasAdditions = true;
-        }
-      }
-    });
-    if (hasAdditions) {
-      StorageService.saveDeposits(synced);
-    }
-    return synced;
+  // Core Data loaded directly from Firestore API (Section 4a)
+  const [members, setMembers] = useState<Member[]>([]);
+  const [meals, setMeals] = useState<MealRecord[]>([]);
+  const [bazar, setBazar] = useState<BazarExpense[]>([]);
+  const [deposits, setDeposits] = useState<Deposit[]>([]);
+  const [fixedExpenses, setFixedExpenses] = useState<FixedExpense[]>([]);
+  const [settings, setSettings] = useState<MessSettings>({
+    appName: DEFAULT_APP_NAME,
+    messName: DEFAULT_APP_NAME,
+    logo: DEFAULT_LOGO,
+    subtitle: 'ঘরের তৈরি স্বাস্থ্যকর খাবারের নির্ভরযোগ্য ঠিকানা',
+    currency: '৳',
+    mealRateMode: 'bazar_only',
+    defaultMealsPerDay: 2,
+    theme: 'light',
+    fixedMealRate: 50,
   });
-  const [fixedExpenses, setFixedExpenses] = useState<FixedExpense[]>(() =>
-    StorageService.getFixedExpenses()
-  );
-  const [settings, setSettings] = useState<MessSettings>(() => StorageService.getSettings());
 
-  // Helper to sync changes to both local storage and server database
+  // Helper to sync changes to server database
   const syncToServer = useCallback(
     (customState?: Partial<{
       members: Member[];
@@ -151,39 +153,53 @@ export default function App() {
     [members, meals, bazar, deposits, fixedExpenses, settings]
   );
 
-  // Sync with Server Database on Initial Mount
+  // Sync with Server Database on Initial Mount & Verify User Session
   useEffect(() => {
+    // 1. Check user session via httpOnly cookie (Section 4b)
+    ApiService.getMe()
+      .then((user) => {
+        if (user) {
+          setAuthUser(user);
+          try {
+            localStorage.setItem('messmate_auth_user', JSON.stringify(user));
+          } catch {}
+        } else {
+          // If server says no session, clear stale auth
+          setAuthUser(null);
+          localStorage.removeItem('messmate_auth_user');
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        setAuthChecking(false);
+      });
+
+    // 2. Load live state from server (Section 4a)
     ApiService.getFullState()
       .then((serverState) => {
         if (serverState) {
-          if (Array.isArray(serverState.members) && serverState.members.length > 0) {
+          if (Array.isArray(serverState.members)) {
             setMembers(serverState.members);
-            StorageService.saveMembers(serverState.members);
           }
-          if (Array.isArray(serverState.meals) && serverState.meals.length > 0) {
+          if (Array.isArray(serverState.meals)) {
             setMeals(serverState.meals);
-            StorageService.saveMeals(serverState.meals);
           }
-          if (Array.isArray(serverState.deposits) && serverState.deposits.length > 0) {
+          if (Array.isArray(serverState.deposits)) {
             setDeposits(serverState.deposits);
-            StorageService.saveDeposits(serverState.deposits);
           }
           if (Array.isArray(serverState.bazar)) {
             setBazar(serverState.bazar);
-            StorageService.saveBazar(serverState.bazar);
           }
           if (Array.isArray(serverState.fixedExpenses)) {
             setFixedExpenses(serverState.fixedExpenses);
-            StorageService.saveFixedExpenses(serverState.fixedExpenses);
           }
           if (serverState.settings) {
             setSettings(serverState.settings);
-            StorageService.saveSettings(serverState.settings);
           }
         }
       })
       .catch((err) => {
-        console.info('Operating from local persistence:', err);
+        console.info('State load from server:', err);
       });
   }, []);
 
@@ -234,56 +250,19 @@ export default function App() {
     return todayMeals.reduce((acc, m) => acc + (Number(m.mealCount) || 0), 0);
   }, [todayMeals]);
 
-  // Authentication Handlers
-  const handleLoginSuccess = (user: AuthUser) => {
-    setAuthUser(user);
-    localStorage.setItem('messmate_auth_user', JSON.stringify(user));
-
-    // Immediately fetch latest members from server so newly registered user is present
-    ApiService.getFullState().then((serverState) => {
-      if (serverState?.members && Array.isArray(serverState.members)) {
-        setMembers(serverState.members);
-        StorageService.saveMembers(serverState.members);
-      }
-    }).catch(() => {});
-
-    if (user.email.trim().toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-      setAppMode('admin');
-      setActiveMemberId('mem-1');
-    } else {
-      setAppMode('member');
-      const matched = members.find(
-        (m) => m.email && m.email.trim().toLowerCase() === user.email.trim().toLowerCase()
-      );
-      const targetId = matched?.id || user.memberId || 'mem-2';
-      setActiveMemberId(targetId);
-      localStorage.setItem('messmate_active_member_id', targetId);
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await ApiService.logout();
-    } catch {}
-    setAuthUser(null);
-    localStorage.removeItem('messmate_auth_user');
-    localStorage.removeItem('messmate_auth_token');
-    localStorage.removeItem('messmate_active_member_id');
-  };
-
   // Admin Preview Member View
   const handlePreviewMember = (targetMemberId: string) => {
     setActiveMemberId(targetMemberId);
-    setAppMode('member');
+    navigate('/member/home');
   };
 
   // Quick Action trigger from Header
   const handleHeaderQuickAction = (action: 'meal' | 'deposit') => {
     if (action === 'meal') {
-      setCurrentTab('meals');
+      navigate('/admin/meals');
     } else if (action === 'deposit') {
-      setCurrentTab('deposits');
       setOpenQuickDeposit(true);
+      navigate('/admin/deposits');
     }
   };
 
@@ -306,7 +285,6 @@ export default function App() {
 
     const updated = [...otherMeals, ...newRecords];
     setMeals(updated);
-    StorageService.saveMeals(updated);
     syncToServer({ meals: updated });
   };
 
@@ -348,7 +326,6 @@ export default function App() {
 
     const updatedMeals = [...otherMeals, ...updatedTodayRecords];
     setMeals(updatedMeals);
-    StorageService.saveMeals(updatedMeals);
     syncToServer({ meals: updatedMeals });
   };
 
@@ -362,7 +339,6 @@ export default function App() {
       updated = [...members, member];
     }
     setMembers(updated);
-    StorageService.saveMembers(updated);
 
     let updatedDeposits = deposits;
     if (totalDepositAmount !== undefined) {
@@ -395,7 +371,6 @@ export default function App() {
           .map((d) => (d.id === firstDepId ? { ...d, amount: totalDepositAmount } : d));
       }
       setDeposits(updatedDeposits);
-      StorageService.saveDeposits(updatedDeposits);
     }
 
     syncToServer({ members: updated, deposits: updatedDeposits });
@@ -404,15 +379,12 @@ export default function App() {
   const handleDeleteMember = (memberId: string) => {
     const updated = members.filter((m) => m.id !== memberId);
     setMembers(updated);
-    StorageService.saveMembers(updated);
 
     const updatedMeals = meals.filter((m) => m.memberId !== memberId);
     setMeals(updatedMeals);
-    StorageService.saveMeals(updatedMeals);
 
     const updatedDeposits = deposits.filter((d) => d.memberId !== memberId);
     setDeposits(updatedDeposits);
-    StorageService.saveDeposits(updatedDeposits);
 
     syncToServer({ members: updated, meals: updatedMeals, deposits: updatedDeposits });
   };
@@ -422,8 +394,26 @@ export default function App() {
       m.id === memberId ? { ...m, isActive: !m.isActive } : m
     );
     setMembers(updated);
-    StorageService.saveMembers(updated);
     syncToServer({ members: updated });
+  };
+
+  // Bazar CRUD
+  const handleSaveBazar = (item: BazarExpense) => {
+    const exists = bazar.some((b) => b.id === item.id);
+    let updated: BazarExpense[];
+    if (exists) {
+      updated = bazar.map((b) => (b.id === item.id ? item : b));
+    } else {
+      updated = [item, ...bazar];
+    }
+    setBazar(updated);
+    syncToServer({ bazar: updated });
+  };
+
+  const handleDeleteBazar = (id: string) => {
+    const updated = bazar.filter((b) => b.id !== id);
+    setBazar(updated);
+    syncToServer({ bazar: updated });
   };
 
   // Deposit CRUD
@@ -436,21 +426,18 @@ export default function App() {
       updated = [item, ...deposits];
     }
     setDeposits(updated);
-    StorageService.saveDeposits(updated);
     syncToServer({ deposits: updated });
   };
 
   const handleDeleteDeposit = (id: string) => {
     const updated = deposits.filter((d) => d.id !== id);
     setDeposits(updated);
-    StorageService.saveDeposits(updated);
     syncToServer({ deposits: updated });
   };
 
   // Settings Save
   const handleSaveSettings = (updated: MessSettings) => {
     setSettings(updated);
-    StorageService.saveSettings(updated);
     syncToServer({ settings: updated });
   };
 
@@ -463,19 +450,15 @@ export default function App() {
   }) => {
     if (imported.members) {
       setMembers(imported.members);
-      StorageService.saveMembers(imported.members);
     }
     if (imported.meals) {
       setMeals(imported.meals);
-      StorageService.saveMeals(imported.meals);
     }
     if (imported.bazar) {
       setBazar(imported.bazar);
-      StorageService.saveBazar(imported.bazar);
     }
     if (imported.deposits) {
       setDeposits(imported.deposits);
-      StorageService.saveDeposits(imported.deposits);
     }
     syncToServer({
       members: imported.members || members,
@@ -485,36 +468,22 @@ export default function App() {
     });
   };
 
-  // Reset to Sample Data
+  // Reset to Server Fresh Data
   const handleResetSampleData = () => {
-    StorageService.resetToSampleData();
-    const freshMembers = StorageService.getMembers();
-    const freshMeals = StorageService.getMeals();
-    const freshBazar = StorageService.getBazar();
-    const freshDeposits = StorageService.getDeposits();
-    const freshFixed = StorageService.getFixedExpenses();
-    const freshSettings = StorageService.getSettings();
-
-    setMembers(freshMembers);
-    setMeals(freshMeals);
-    setBazar(freshBazar);
-    setDeposits(freshDeposits);
-    setFixedExpenses(freshFixed);
-    setSettings(freshSettings);
-
-    syncToServer({
-      members: freshMembers,
-      meals: freshMeals,
-      bazar: freshBazar,
-      deposits: freshDeposits,
-      fixedExpenses: freshFixed,
-      settings: freshSettings,
+    ApiService.getFullState().then((serverState) => {
+      if (serverState) {
+        if (Array.isArray(serverState.members)) setMembers(serverState.members);
+        if (Array.isArray(serverState.meals)) setMeals(serverState.meals);
+        if (Array.isArray(serverState.deposits)) setDeposits(serverState.deposits);
+        if (Array.isArray(serverState.bazar)) setBazar(serverState.bazar);
+        if (Array.isArray(serverState.fixedExpenses)) setFixedExpenses(serverState.fixedExpenses);
+        if (serverState.settings) setSettings(serverState.settings);
+      }
     });
   };
 
   // Clear All Data
   const handleClearAllData = () => {
-    StorageService.clearAllData();
     setMembers([]);
     setMeals([]);
     setBazar([]);
@@ -529,229 +498,462 @@ export default function App() {
     });
   };
 
-  // =========================================================================
-  // CONDITION 1: IF NOT LOGGED IN -> SHOW EMAIL & PASSWORD LOGIN SCREEN
-  // =========================================================================
-  if (!authUser) {
-    return <LoginView onLoginSuccess={handleLoginSuccess} />;
-  }
+  const navigate = useNavigate();
 
-  // =========================================================================
-  // CONDITION 1B: FIRST ADMIN LOGIN MUST CHANGE PASSWORD SCREEN
-  // The admin cannot open the admin panel until the password is changed
-  // =========================================================================
-  if (isAdmin && authUser.mustChangePassword) {
+  // New Orders Count for Admin navigation badge (Section 1e)
+  const [newOrdersCount, setNewOrdersCount] = useState<number>(0);
+
+  const fetchOrdersCount = useCallback(async () => {
+    if (!isAdmin) return;
+    try {
+      const res = await fetch('/api/mess/admin/orders', { credentials: 'include' });
+      const json = await res.json();
+      if (json.success && Array.isArray(json.data)) {
+        const pendingCount = json.data.filter((o: any) => o.status === 'PENDING').length;
+        setNewOrdersCount(pendingCount);
+      }
+    } catch {
+      // offline / mock
+    }
+  }, [isAdmin]);
+
+  useEffect(() => {
+    fetchOrdersCount();
+    const interval = setInterval(fetchOrdersCount, 30000);
+    return () => clearInterval(interval);
+  }, [fetchOrdersCount]);
+
+  // Login Success Handler: navigates to ?redirect= or respective default panel
+  const handleLoginSuccess = (user: AuthUser) => {
+    setAuthUser(user);
+    try {
+      localStorage.setItem('messmate_auth_user', JSON.stringify(user));
+    } catch {}
+
+    const params = new URLSearchParams(window.location.search);
+    const redirect = params.get('redirect');
+    const isUserAdmin = user.email.trim().toLowerCase() === ADMIN_EMAIL.toLowerCase();
+
+    if (redirect && redirect.startsWith('/') && !redirect.startsWith('//')) {
+      navigate(redirect, { replace: true });
+    } else if (isUserAdmin) {
+      navigate('/admin/dashboard', { replace: true });
+    } else {
+      navigate('/member/home', { replace: true });
+    }
+  };
+
+  // Logout Handler - Navigates directly to homepage ('/')
+  const handleLogout = async () => {
+    try {
+      await ApiService.logout();
+    } catch {}
+    localStorage.removeItem('messmate_auth_user');
+    sessionStorage.clear();
+    setAuthUser(null);
+    navigate('/', { replace: true });
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  };
+
+  // If first admin login, forced password change screen can be completed or dismissed
+  if (isAdmin && authUser?.mustChangePassword) {
     return (
       <AdminForcePasswordChange
         authUser={authUser}
         onPasswordChanged={(updatedUser) => {
           setAuthUser(updatedUser);
-          localStorage.setItem('messmate_auth_user', JSON.stringify(updatedUser));
+          try {
+            localStorage.setItem('messmate_auth_user', JSON.stringify(updatedUser));
+          } catch {}
+        }}
+        onDismiss={() => {
+          const dismissedUser = { ...authUser, mustChangePassword: false };
+          setAuthUser(dismissedUser);
+          try {
+            localStorage.setItem('messmate_auth_user', JSON.stringify(dismissedUser));
+          } catch {}
         }}
         onLogout={handleLogout}
       />
     );
   }
 
-  // =========================================================================
-  // CONDITION 2: IF MEMBER (Any email other than abidulsafat85@gmail.com)
-  // OR IF ADMIN IS PREVIEWING A MEMBER PORTAL
-  // =========================================================================
-  if (!isAdmin || appMode === 'member') {
-    const effectiveMemberId = activeMemberId || 'mem-2';
-
-    return (
-      <div className="relative">
-        {/* If Admin is viewing a member's portal, show top return banner */}
-        {isAdmin && (
-          <div className="bg-amber-600 text-white px-4 py-2 text-xs font-bold flex items-center justify-between shadow-xs">
-            <span>
-              👑 আপনি এডমিন হিসেবে মেম্বার পোর্টাল প্রিভিউ দেখছেন (মেম্বার ID: {effectiveMemberId})
-            </span>
-            <button
-              onClick={() => setAppMode('admin')}
-              className="px-3 py-1 bg-white text-amber-900 rounded-lg font-black hover:bg-amber-50 transition-colors cursor-pointer"
-            >
-              এডমিন প্যানেলে ফিরুন
-            </button>
-          </div>
-        )}
-
-        {/* Strictly Isolated Member View with Individual Download Option */}
-        <MemberPortalView
-          memberId={effectiveMemberId}
-          onLogout={handleLogout}
-          isAdmin={isAdmin}
-          onOpenAdminLogin={() => {
-            if (isAdmin) {
-              setAppMode('admin');
-            } else {
-              handleLogout();
-            }
-          }}
-          allMembersFallback={members}
-          allMealsFallback={meals}
-          allDepositsFallback={deposits}
-          allBazarFallback={bazar}
-          settingsFallback={settings}
-        />
-      </div>
-    );
-  }
-
-  // =========================================================================
-  // CONDITION 3: IF LOGGED IN AS abidulsafat85@gmail.com -> SHOW ADMIN PANEL
-  // =========================================================================
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-slate-100/70 text-slate-900 font-sans">
-      {/* Desktop Left Sidebar */}
-      <Sidebar
-        currentTab={currentTab}
-        onSelectTab={setCurrentTab}
-        settings={settings}
-        todayMealCount={todayMealCount}
-        memberCount={members.length}
-        onOpenShareLinks={() => setIsShareModalOpen(true)}
-        onSwitchToMemberView={() => handlePreviewMember(members[1]?.id || 'mem-2')}
-        authUser={authUser}
-        onLogout={handleLogout}
+    <Routes>
+      {/* ========================================== */}
+      {/* PUBLIC ROUTES (Section 1a)                */}
+      {/* ========================================== */}
+      <Route path="/" element={<HomePage authUser={authUser} onLoginSuccess={handleLoginSuccess} />} />
+      <Route path="/order" element={<OrderPage />} />
+      <Route path="/order/status" element={<OrderStatusPage />} />
+      <Route
+        path="/login"
+        element={
+          <PublicLoginRoute
+            authUser={authUser}
+            isAdmin={isAdmin}
+            onLoginSuccess={handleLoginSuccess}
+          />
+        }
+      />
+      <Route
+        path="/register"
+        element={
+          <PublicRegisterRoute
+            authUser={authUser}
+            isAdmin={isAdmin}
+            onRegisterSuccess={handleLoginSuccess}
+          />
+        }
       />
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        {/* Sticky Top Header */}
-        <Header
-          selectedMonth={selectedMonth}
-          onSelectMonth={setSelectedMonth}
-          settings={settings}
-          onOpenQuickAction={handleHeaderQuickAction}
-          onNavigateTab={setCurrentTab}
-          onOpenShareLinks={() => setIsShareModalOpen(true)}
-          onSwitchToMemberView={() => handlePreviewMember(members[1]?.id || 'mem-2')}
-          authUser={authUser}
-          onLogout={handleLogout}
-        />
-
-        {/* Scrollable View Container */}
-        <main className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 pt-6 pb-28 lg:pb-8">
-          <div className="max-w-7xl mx-auto">
-            {currentTab === 'dashboard' && (
-              <DashboardView
-                summary={monthlySummary}
-                members={members}
-                todayMeals={todayMeals}
-                allMeals={meals}
-                allDeposits={deposits}
-                settings={settings}
-                onNavigateTab={setCurrentTab}
-                onOpenQuickAction={handleHeaderQuickAction}
+      {/* ========================================== */}
+      {/* MEMBER ROUTES (Section 1a & 1c)           */}
+      {/* ========================================== */}
+      <Route
+        path="/member/home"
+        element={
+          <RequireAuth authUser={authUser} authChecking={authChecking}>
+            <div className="relative">
+              {isAdmin && (
+                <div className="bg-amber-600 text-white px-4 py-2 text-xs font-bold flex items-center justify-between shadow-xs sticky top-0 z-50">
+                  <span>👑 আপনি এডমিন হিসেবে মেম্বার পোর্টাল প্রিভিউ দেখছেন</span>
+                  <button
+                    onClick={() => navigate('/admin/dashboard')}
+                    className="px-3 py-1 bg-white text-amber-900 rounded-lg font-black hover:bg-amber-50 transition-colors cursor-pointer"
+                  >
+                    এডমিন প্যানেলে ফিরুন
+                  </button>
+                </div>
+              )}
+              <MemberPortalView
+                memberId={activeMemberId || authUser?.memberId || authUser?.id || 'mem-2'}
+                onLogout={handleLogout}
+                isAdmin={isAdmin}
+                authUser={authUser}
+                onOpenAdminLogin={() => {
+                  if (isAdmin) navigate('/admin/dashboard');
+                  else handleLogout();
+                }}
+                allMembersFallback={members}
+                allMealsFallback={meals}
+                allDepositsFallback={deposits}
+                allBazarFallback={bazar}
+                settingsFallback={settings}
               />
-            )}
+            </div>
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/member/meal"
+        element={
+          <RequireAuth authUser={authUser} authChecking={authChecking}>
+            <MemberMealPage authUser={authUser} onLogout={handleLogout} />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/member/history"
+        element={
+          <RequireAuth authUser={authUser} authChecking={authChecking}>
+            <MemberHistoryPage authUser={authUser} onLogout={handleLogout} isAdmin={isAdmin} />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/member/payment"
+        element={
+          <RequireAuth authUser={authUser} authChecking={authChecking}>
+            <MemberPaymentPage authUser={authUser} onLogout={handleLogout} isAdmin={isAdmin} />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/member/complaints"
+        element={
+          <RequireAuth authUser={authUser} authChecking={authChecking}>
+            <MemberComplaintsPage authUser={authUser} onLogout={handleLogout} isAdmin={isAdmin} />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/member/profile"
+        element={
+          <RequireAuth authUser={authUser} authChecking={authChecking}>
+            <MemberProfilePage authUser={authUser} onLogout={handleLogout} isAdmin={isAdmin} />
+          </RequireAuth>
+        }
+      />
+      <Route path="/member" element={<Navigate to="/member/home" replace />} />
 
-            {currentTab === 'meals' && (
-              <MealEntryView
-                members={members}
-                allMeals={meals}
-                onSaveDayMeals={handleSaveDayMeals}
+      {/* ========================================== */}
+      {/* ADMIN ROUTES (Section 1a, 1c & 1e)        */}
+      {/* ========================================== */}
+      <Route
+        path="/admin/*"
+        element={
+          <RequireAdmin authUser={authUser} isAdmin={isAdmin}>
+            <div className="flex h-screen w-screen overflow-hidden bg-slate-100/70 text-slate-900 font-sans">
+              {/* Desktop Left Sidebar */}
+              <Sidebar
                 settings={settings}
-                onNavigateTab={setCurrentTab}
+                todayMealCount={todayMealCount}
+                memberCount={members.length}
+                newOrdersCount={newOrdersCount}
+                onOpenShareLinks={() => setIsShareModalOpen(true)}
+                onSwitchToMemberView={() => {
+                  setActiveMemberId(members[1]?.id || 'mem-2');
+                  navigate('/member/home');
+                }}
+                authUser={authUser}
+                onLogout={handleLogout}
               />
-            )}
 
-            {currentTab === 'whatsapp' && (
-              <WhatsAppPollView
+              {/* Main Content Area */}
+              <div className="flex-1 flex flex-col h-full overflow-hidden">
+                {/* Sticky Top Header */}
+                <Header
+                  selectedMonth={selectedMonth}
+                  onSelectMonth={setSelectedMonth}
+                  settings={settings}
+                  onOpenQuickAction={handleHeaderQuickAction}
+                  onNavigateTab={(tab) => navigate(`/admin/${tab}`)}
+                  onOpenShareLinks={() => setIsShareModalOpen(true)}
+                  onSwitchToMemberView={() => {
+                    setActiveMemberId(members[1]?.id || 'mem-2');
+                    navigate('/member/home');
+                  }}
+                  authUser={authUser}
+                  onLogout={handleLogout}
+                />
+
+                {/* Scrollable View Container */}
+                <main className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 pt-6 pb-28 lg:pb-8">
+                  <div className="max-w-7xl mx-auto">
+                    <Routes>
+                      <Route
+                        path="dashboard"
+                        element={
+                          <DashboardView
+                            summary={monthlySummary}
+                            members={members}
+                            todayMeals={todayMeals}
+                            allMeals={meals}
+                            allDeposits={deposits}
+                            settings={settings}
+                            onNavigateTab={(tab) => navigate(`/admin/${tab}`)}
+                            onOpenQuickAction={handleHeaderQuickAction}
+                          />
+                        }
+                      />
+                      <Route
+                        path="meals"
+                        element={
+                          <MealEntryView
+                            members={members}
+                            allMeals={meals}
+                            onSaveDayMeals={handleSaveDayMeals}
+                            settings={settings}
+                            onNavigateTab={(tab) => navigate(`/admin/${tab}`)}
+                          />
+                        }
+                      />
+                      <Route
+                        path="members"
+                        element={
+                          <MembersView
+                            members={members}
+                            onSaveMember={handleSaveMember}
+                            onDeleteMember={handleDeleteMember}
+                            onToggleActive={handleToggleMemberActive}
+                            meals={meals}
+                            deposits={deposits}
+                            summary={monthlySummary}
+                            settings={settings}
+                          />
+                        }
+                      />
+                      <Route
+                        path="bazar"
+                        element={
+                          <BazarView
+                            bazar={bazar}
+                            members={members}
+                            onSaveBazar={handleSaveBazar}
+                            onDeleteBazar={handleDeleteBazar}
+                            selectedMonth={selectedMonth}
+                            settings={settings}
+                          />
+                        }
+                      />
+                      <Route
+                        path="deposits"
+                        element={
+                          <DepositsView
+                            deposits={deposits}
+                            members={members}
+                            onSaveDeposit={handleSaveDeposit}
+                            onDeleteDeposit={handleDeleteDeposit}
+                            selectedMonth={selectedMonth}
+                            settings={settings}
+                            isOpenAddModalDirectly={openQuickDeposit}
+                            onCloseAddModalDirectly={() => setOpenQuickDeposit(false)}
+                          />
+                        }
+                      />
+                      <Route
+                        path="orders"
+                        element={<OrdersView />}
+                      />
+                      <Route
+                        path="whatsapp"
+                        element={
+                          <WhatsAppPollView
+                            members={members}
+                            settings={settings}
+                            onUpdateSettings={handleSaveSettings}
+                            onApplyPollToMeals={handleApplyPollToMeals}
+                          />
+                        }
+                      />
+                      <Route
+                        path="settings"
+                        element={
+                          <SettingsView
+                            settings={settings}
+                            onSaveSettings={handleSaveSettings}
+                            members={members}
+                            meals={meals}
+                            bazar={bazar}
+                            deposits={deposits}
+                            onImportComplete={handleImportComplete}
+                            onResetSampleData={handleResetSampleData}
+                            onClearAllData={handleClearAllData}
+                          />
+                        }
+                      />
+                      <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
+                    </Routes>
+                  </div>
+                </main>
+
+                {/* Mobile Bottom Navigation Bar */}
+                <BottomNav
+                  todayMealCount={todayMealCount}
+                  memberCount={members.length}
+                  newOrdersCount={newOrdersCount}
+                  settings={settings}
+                  onLogout={handleLogout}
+                />
+              </div>
+
+              {/* Share Links Modal */}
+              <ShareLinksModal
+                isOpen={isShareModalOpen}
+                onClose={() => setIsShareModalOpen(false)}
                 members={members}
                 settings={settings}
-                onUpdateSettings={handleSaveSettings}
-                onApplyPollToMeals={handleApplyPollToMeals}
-              />
-            )}
-
-            {currentTab === 'members' && (
-              <MembersView
-                members={members}
-                onSaveMember={handleSaveMember}
-                onDeleteMember={handleDeleteMember}
-                onToggleActive={handleToggleMemberActive}
-                meals={meals}
-                deposits={deposits}
-                summary={monthlySummary}
-                settings={settings}
-              />
-            )}
-
-            {currentTab === 'deposits' && (
-              <DepositsView
-                deposits={deposits}
-                members={members}
-                onSaveDeposit={handleSaveDeposit}
-                onDeleteDeposit={handleDeleteDeposit}
-                selectedMonth={selectedMonth}
-                settings={settings}
-                isOpenAddModalDirectly={openQuickDeposit}
-                onCloseAddModalDirectly={() => setOpenQuickDeposit(false)}
-              />
-            )}
-
-            {currentTab === 'reports' && (
-              <MonthlyReportView
-                summary={monthlySummary}
-                meals={meals}
-                deposits={deposits}
-                settings={settings}
-              />
-            )}
-
-            {currentTab === 'calendar' && (
-              <CalendarHistoryView
-                selectedMonth={selectedMonth}
-                onSelectMonth={setSelectedMonth}
-                members={members}
-                meals={meals}
-                settings={settings}
-                onNavigateToDateMeal={(date) => {
-                  setCurrentTab('meals');
+                onPreviewMember={(memberId) => {
+                  setIsShareModalOpen(false);
+                  setActiveMemberId(memberId);
+                  navigate('/member/home');
                 }}
               />
-            )}
-
-            {currentTab === 'settings' && (
-              <SettingsView
-                settings={settings}
-                onSaveSettings={handleSaveSettings}
-                members={members}
-                meals={meals}
-                bazar={bazar}
-                deposits={deposits}
-                onImportComplete={handleImportComplete}
-                onResetSampleData={handleResetSampleData}
-                onClearAllData={handleClearAllData}
-              />
-            )}
-          </div>
-        </main>
-
-        {/* Mobile Bottom Navigation Bar */}
-        <BottomNav
-          currentTab={currentTab}
-          onSelectTab={setCurrentTab}
-          todayMealCount={todayMealCount}
-          memberCount={members.length}
-          settings={settings}
-        />
-      </div>
-
-      {/* Share Links Modal (Admin Tool to copy links & send WhatsApp invites) */}
-      <ShareLinksModal
-        isOpen={isShareModalOpen}
-        onClose={() => setIsShareModalOpen(false)}
-        members={members}
-        settings={settings}
-        onPreviewMember={(memberId) => {
-          setIsShareModalOpen(false);
-          handlePreviewMember(memberId);
-        }}
+            </div>
+          </RequireAdmin>
+        }
       />
-    </div>
+
+      {/* ========================================== */}
+      {/* 404 NOT FOUND ROUTE                       */}
+      {/* ========================================== */}
+      <Route path="*" element={<NotFoundPage />} />
+    </Routes>
   );
 }
+
+// ---------------------------------------------------------------------------
+// ROUTE GUARDS (Section 1c)
+// ---------------------------------------------------------------------------
+
+function RequireAuth({
+  authUser,
+  authChecking,
+  children,
+}: {
+  authUser: AuthUser | null;
+  authChecking?: boolean;
+  children: React.ReactElement;
+}) {
+  if (authChecking && !authUser) {
+    return (
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center p-4">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-9 w-9 rounded-full border-4 border-emerald-600 border-t-transparent animate-spin" />
+          <p className="text-xs font-bold text-slate-500">লোড হচ্ছে...</p>
+        </div>
+      </div>
+    );
+  }
+  if (!authUser) {
+    return <Navigate to="/" replace />;
+  }
+  return children;
+}
+
+function RequireAdmin({
+  authUser,
+  isAdmin,
+  children,
+}: {
+  authUser: AuthUser | null;
+  isAdmin: boolean;
+  children: React.ReactElement;
+}) {
+  if (!authUser) {
+    return <Navigate to="/" replace />;
+  }
+  if (!isAdmin) {
+    return <Navigate to="/member/home" replace />;
+  }
+  return children;
+}
+
+function PublicLoginRoute({
+  authUser,
+  isAdmin,
+  onLoginSuccess,
+}: {
+  authUser: AuthUser | null;
+  isAdmin: boolean;
+  onLoginSuccess: (user: AuthUser) => void;
+}) {
+  const [searchParams] = useSearchParams();
+  const redirect = searchParams.get('redirect');
+
+  if (authUser) {
+    if (redirect && redirect.startsWith('/') && !redirect.startsWith('//')) {
+      return <Navigate to={redirect} replace />;
+    }
+    return <Navigate to={isAdmin ? '/admin/dashboard' : '/member/home'} replace />;
+  }
+
+  return <LoginView onLoginSuccess={onLoginSuccess} />;
+}
+
+function PublicRegisterRoute({
+  authUser,
+  isAdmin,
+  onRegisterSuccess,
+}: {
+  authUser: AuthUser | null;
+  isAdmin: boolean;
+  onRegisterSuccess: (user: AuthUser) => void;
+}) {
+  if (authUser) {
+    return <Navigate to={isAdmin ? '/admin/dashboard' : '/member/home'} replace />;
+  }
+  return <RegisterPage onRegisterSuccess={onRegisterSuccess} />;
+}
+
